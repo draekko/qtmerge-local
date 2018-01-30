@@ -233,7 +233,9 @@ class QTMerge {
             |   <p class="timestamp">Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
             |       <a href="qtmerge.xls">qtmerge.xls</a> |
-            |       <a href="qtmerge.json">qtmerge.json</a> (<a href="qtmerge-pretty.json">qtmerge-pretty.json</a>)
+            |       <a href="qtmerge.json">qtmerge.json</a> (<a href="qtmerge-pretty.json">qtmerge-pretty.json</a>) ||
+            |       <a href="http://qcodefag.github.io/">Q Posts</a> (qcodefag.github.io) |
+            |       <a href="http://trumptwitterarchive.com/">Trump Tweets</a> (trumptwitterarchive.com)
             |   </p>
             |""".trimMargin())
 
