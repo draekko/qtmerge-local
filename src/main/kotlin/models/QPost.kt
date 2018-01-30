@@ -5,20 +5,20 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 data class QPostImage(
-        var url : String,
-        var filename : String
+        var url : String?,
+        var filename : String?
 )
 
 data class QPost(
         var id : String,
-        var userId : String,
+        var userId : String?,
         var timestamp : Long,
         var subject : String,
         var name : String,
         var email : String,
         var trip : String,
         var text : String?,
-        var images : Array<QPostImage>,
+        var images : Array<QPostImage>?,
         var threadId : String,
         var source : String,
         var link : String,
@@ -27,7 +27,7 @@ data class QPost(
     override fun Type(): String = "QPost"
 
     override fun ID(): String {
-        return userId
+        return userId?:""
     }
 
     override fun Trip(): String {
@@ -48,5 +48,10 @@ data class QPost(
 
     override fun Text(): String {
         return text?:""
+    }
+
+    override fun Images(): List<Pair<String?, String?>> {
+        if(images == null) return emptyList()
+        return images!!.map { Pair(it.url, it.filename) }
     }
 }

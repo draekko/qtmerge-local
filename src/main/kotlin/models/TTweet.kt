@@ -42,4 +42,8 @@ data class TTweet(
     override fun Text(): String {
         return text?:""
     }
+
+    override fun Images(): List<Pair<String?, String?>> {
+        return emptyList()
+    }
 }
