@@ -227,7 +227,7 @@ class QTMerge {
             |       <meta charset="utf-8">
             |       <title>qtmerge</title>
             |       <link rel="stylesheet" href="../styles/screen.css">
-            |       <script type="text/javascript" src="http://code.jquery.com/jquery-3.3.1.min.js"></script>
+            |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
             |   </head>
             |   <body>
             |   <p class="timestamp">Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
