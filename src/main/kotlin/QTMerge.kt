@@ -44,13 +44,14 @@ class QTMerge {
         //events.addAll(TwitterArchiveImporter("$DATADIR/Trump").ImportLatest())
         events.addAll(TwitterArchiveImporter("$DATADIR/Trump/2017").ImportLatest())
         events.addAll(TwitterArchiveImporter("$DATADIR/Trump/2018").ImportLatest())
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("cbts", true, "8ch.net", "cbtsTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("pol", false, "4chan.org", "pol4chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("pol", true, "8ch.net", "polTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").Import("thestorm", true, "8ch.net", "thestormTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("cbts", true, "8ch.net", "cbtsTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("pol", false, "4chan.org", "pol4chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("pol", true, "8ch.net", "polTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("thestorm", true, "8ch.net", "thestormTrip8chanPosts.json"))
+        //events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportNews("news.json"))
 
         events.sortBy { it.Timestamp().toEpochSecond() }
 
