@@ -251,6 +251,7 @@ class QTMerge {
             |   </tr>
             |""".trimMargin())
 
+        val ref = Regex(""">>(\d+)""")
         events.reversed().forEach {
             out.appendln("  <tr id=\"${it.UID}\">")
             out.appendln("      <td class=\"e-timestamp\">${it.Timestamp().format(formatter)}</td>")
@@ -273,7 +274,15 @@ class QTMerge {
             if(images.isNotEmpty() && it.Text().isNotEmpty()) {
                 images += "<br>"
             }
-            out.appendln("        <td class=\"e-text\">$images${it.Text()}</td>")
+            var text = it.Text()
+            var refurl = it.Reference().replaceAfter("#", "")
+            if(!refurl.endsWith("#")) {
+                refurl += "#"
+            }
+            text = text.replace(ref, { match ->
+                "<a href=\"$refurl${match.groups[1]!!.value}\">${match.value}</a>"
+            })
+            out.appendln("        <td class=\"e-text\">$images$text</td>")
             out.appendln("        <td class=\"e-minute\">${it.Timestamp().minute}</td>")
             var diffs = ""
             it.Deltas.forEach { delta ->
