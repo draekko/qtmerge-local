@@ -15,6 +15,7 @@ import java.io.FileOutputStream
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 // TODO: Switch to Kotson?
@@ -38,6 +39,33 @@ class QTMerge {
         ExportXls()
         ExportJson()
         ExportHtml()
+
+        CalcQStats()
+    }
+
+    fun CalcQStats() {
+        val days : MutableMap<Long, Long> = hashMapOf()
+        var lastTime : ZonedDateTime? = null
+
+        events.forEach {
+            if(it.Type() == "QPost") {
+                if(lastTime == null) {
+                    lastTime = it.Timestamp()
+                } else {
+                    val delta = ChronoUnit.DAYS.between(lastTime, it.Timestamp())
+                    if(days.contains(delta)) {
+                        days[delta] = days[delta]!! + 1
+                    } else {
+                        days[delta] = 1
+                    }
+                    lastTime = it.Timestamp()
+                }
+            }
+        }
+
+        days.toSortedMap().forEach {
+            println("${it.key} ${it.value}")
+        }
     }
 
     fun LoadSources() {
