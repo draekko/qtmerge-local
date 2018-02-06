@@ -46,9 +46,11 @@ class QTMerge {
     fun CalcQStats() {
         val days : MutableMap<Long, Long> = hashMapOf()
         var lastTime : ZonedDateTime? = null
+        var totalPosts: Long = 0
 
         events.forEach {
             if(it.Type() == "QPost") {
+                totalPosts++
                 if(lastTime == null) {
                     lastTime = it.Timestamp()
                 } else {
@@ -63,6 +65,7 @@ class QTMerge {
             }
         }
 
+        println("Total QPosts: $totalPosts")
         days.toSortedMap().forEach {
             println("${it.key} ${it.value}")
         }
