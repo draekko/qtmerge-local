@@ -36,8 +36,6 @@ class QTMerge {
         CalcOffsets()
 
         File(RESULTDIR).mkdirs()
-        ExportXls()
-        ExportJson()
         ExportHtml()
 
         CalcQStats()
@@ -100,148 +98,15 @@ class QTMerge {
         var resetQQ = false
         events.forEach { event ->
             if(event.Type() == "QPost") {
-                if(resetQQ) { qq.clear(); resetQQ = false }
-                qq.add(event)
-            } else if(event.Type() == "Tweet") {
                 resetQQ = true
-                event.Deltas.addAll(qq.reversed())
-            }
-        }
-    }
-
-    fun ExportXls() {
-        var lastTweet : ZonedDateTime? = null
-        var lastQpost : ZonedDateTime? = null
-        val wb = HSSFWorkbook()
-        val out = FileOutputStream("$RESULTDIR/qtmerge.xls")
-        val sheet = wb.createSheet("Timeline")
-        sheet.isDisplayGridlines = false
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-        val linkStyle = wb.createCellStyle()
-        val linkFont = wb.createFont()
-        linkFont.underline = Font.U_SINGLE
-        linkFont.color = IndexedColors.BLUE.index
-        linkStyle.setFont(linkFont)
-        val headerFont = wb.createFont()
-        headerFont.bold = true
-        val headerStyle = wb.createCellStyle()
-        headerStyle.setFont(headerFont)
-        val headerCenterStyle = wb.createCellStyle()
-        headerCenterStyle.setFont(headerFont)
-        headerCenterStyle.setAlignment(HorizontalAlignment.CENTER)
-        val centerStyle = wb.createCellStyle()
-        centerStyle.setAlignment(HorizontalAlignment.CENTER)
-        val centerBoldStyle = wb.createCellStyle()
-        centerBoldStyle.setAlignment(HorizontalAlignment.CENTER)
-        centerBoldStyle.setFont(headerFont)
-        val leftStyle = wb.createCellStyle()
-        leftStyle.setAlignment(HorizontalAlignment.LEFT)
-        val centerRedStyle = wb.createCellStyle()
-        centerRedStyle.setAlignment(HorizontalAlignment.CENTER)
-        val redFont = wb.createFont()
-        redFont.color = HSSFColor.RED.index
-        centerRedStyle.setFont(redFont)
-
-        val header = sheet.createRow(0)
-        header.createCell(0).setCellValue("Time")
-        header.getCell(0).setCellStyle(headerStyle)
-        header.createCell(1).setCellValue("Trip")
-        header.getCell(1).setCellStyle(headerStyle)
-        header.createCell(2).setCellValue("Link")
-        header.getCell(2).setCellStyle(headerStyle)
-        header.createCell(3).setCellValue("Preview")
-        header.getCell(3).setCellStyle(headerStyle)
-        header.createCell(4).setCellValue("Minute")
-        header.getCell(4).setCellStyle(headerStyle)
-        header.createCell(5).setCellValue("Diffs")
-        header.getCell(5).setCellStyle(headerStyle)
-        val lastQTS : MutableList<ZonedDateTime?> = mutableListOf()
-        var rowIndex = 1
-        var maxCol = 5
-        var qcount = 1
-        events.reversed().forEach {
-            val row = sheet.createRow(rowIndex)
-
-            //if(it.Type() == "Tweet" && rowIndex < 10)
-            //println("${it.RawTimestamp()} = ${it.Timestamp().format(formatter)}")
-            row.createCell(0).setCellValue(it.Timestamp().format(formatter))
-
-            row.createCell(1).setCellValue(it.Trip())
-
-            val refcell = row.createCell(2)
-            refcell.setCellValue(it.Type())
-            val link = wb.creationHelper.createHyperlink(HyperlinkType.URL)
-            link.address = it.Reference()
-            refcell.hyperlink = link
-            refcell.setCellStyle(linkStyle)
-
-            var text = it.Text().replace("\n", " ")
-            if(text.length > 30) {
-                text = text.substring(0, 30) + "..."
-            }
-            row.createCell(3).setCellValue(text)
-
-            row.createCell(4).setCellValue(it.Timestamp().minute.toDouble())
-            row.getCell(4).setCellStyle(centerStyle)
-
-            if(it.Type() == "QPost") {
-                row.createCell(5).setCellValue(qcount.toDouble())
-                row.getCell(5).setCellStyle(centerBoldStyle)
-                qcount++
-            } else {
-                qcount = 1
-            }
-
-            when(it.Type()) {
-                "Tweet" -> { lastTweet = it.Timestamp() }
-                "QPost" -> { lastQpost = it.Timestamp() }
-            }
-            rowIndex++
-        }
-        val qtCol : MutableList<ZonedDateTime> = arrayListOf()
-        var clearQtCol = false
-        rowIndex = events.size
-        events.forEach {event ->
-            val row = sheet.getRow(rowIndex)
-            if(event.Type() == "QPost") {
-                if(clearQtCol) { qtCol.clear(); clearQtCol = false }
-                qtCol.add(0, event.Timestamp())
-                //row.createCell(5).setCellValue(qtCol.size.toDouble())
-                //row.getCell(5).setCellStyle(centerBoldStyle)
             } else if(event.Type() == "Tweet") {
-                var col = 6
-                qtCol.forEachIndexed { idx, time ->
-                    //row.createCell(5 + (qtCol.size - idx)).setCellValue((event.Timestamp().minute - time.minute).toDouble())
-                    //row.getCell(5 + (qtCol.size - idx)).setCellStyle(centerStyle)
-                    row.createCell(col).setCellValue((event.Timestamp().minute - time.minute).toDouble())
-                    if (col == 6 && !clearQtCol) {
-                        row.getCell(col).setCellStyle(centerRedStyle)
-                    } else {
-                        row.getCell(col).setCellStyle(centerStyle)
-                    }
-                    if(col > maxCol) maxCol = col
-                    col++
+                if(resetQQ) { qq.clear(); resetQQ = false }
+                if(qq.isNotEmpty()) {
+                    event.Deltas.addAll(qq.reversed())
                 }
-                clearQtCol = true
+                qq.add(event)
             }
-            rowIndex--
         }
-        sheet.autoSizeColumn(0)
-        sheet.autoSizeColumn(2)
-        sheet.autoSizeColumn(3)
-        sheet.autoSizeColumn(4)
-        (5..maxCol).forEach {
-            sheet.autoSizeColumn(it)
-        }
-        (6..maxCol).forEach {
-            header.createCell(it).setCellValue((it-5).toDouble())
-            header.getCell(it).setCellStyle(headerCenterStyle)
-        }
-        sheet.createFreezePane(0, 1)
-        sheet.setAutoFilter(CellRangeAddress(0, events.size, 0, 4))
-
-        wb.write(out)
-        out.close()
     }
 
     fun ExportJson() {
@@ -259,12 +124,13 @@ class QTMerge {
             |       <meta charset="utf-8">
             |       <title>qtmerge</title>
             |       <link rel="stylesheet" href="../styles/screen.css">
+            |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
             |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
+            |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
             |   </head>
             |   <body>
             |   <p class="timestamp">Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
-            |       <a href="qtmerge.xls">qtmerge.xls</a> |
             |       <a href="qtmerge.json">qtmerge.json</a> (<a href="qtmerge-pretty.json">qtmerge-pretty.json</a>) ||
             |       <a href="http://qcodefag.github.io/">Q Posts</a> (qcodefag.github.io) |
             |       <a href="http://trumptwitterarchive.com/">Trump Tweets</a> (trumptwitterarchive.com)
@@ -277,8 +143,7 @@ class QTMerge {
             |       <th>Trip</th>
             |       <th>Link</th>
             |       <th>Text</th>
-            |       <th>Minute</th>
-            |       <th>Diffs To Last QPost</th>
+            |       <th>Tweet Time Diffs</th>
             |   </tr>
             |""".trimMargin())
 
@@ -314,10 +179,11 @@ class QTMerge {
                 "<a href=\"$refurl${match.groups[1]!!.value}\">${match.value}</a>"
             })
             out.appendln("        <td class=\"e-text\">$images$text</td>")
-            out.appendln("        <td class=\"e-minute\">${it.Timestamp().minute}</td>")
             var diffs = ""
             it.Deltas.forEach { delta ->
-                diffs += "<span data-id=\"${delta.UID}\" class=\"delta\">${it.Timestamp().minute - delta.Timestamp().minute}</span> "
+                val minutes = (it.Timestamp().minute - delta.Timestamp().minute).toLong()
+                val searchtime = delta.Timestamp().minusMinutes(minutes).format(formatter)
+                diffs += "<span data-id=\"${delta.UID}\" class=\"delta\" title=\"~ $searchtime\">$minutes</span> "
             }
             out.appendln("        <td class=\"e-diffs\">$diffs</td>")
             out.appendln("    </tr>")
