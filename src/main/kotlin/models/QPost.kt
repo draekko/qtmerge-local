@@ -27,7 +27,7 @@ data class QPost(
     override fun Type(): String = "QPost"
 
     override fun ID(): String {
-        return userId?:""
+        return id
     }
 
     override fun Trip(): String {

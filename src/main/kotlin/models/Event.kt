@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 import java.util.*
 
 abstract class Event(
-        var UID : String = UUID.randomUUID().toString(),
+        var UID : String = "",
         var Deltas : MutableList<Event> = arrayListOf()
 ) {
     abstract fun Type() : String

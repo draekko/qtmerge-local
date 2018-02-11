@@ -1,5 +1,6 @@
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import controllers.importer.QCodeFagImporter
 import controllers.importer.TwitterArchiveImporter
 import models.Event
@@ -85,9 +86,9 @@ class QTMerge {
 
         events.sortBy { it.Timestamp().toEpochSecond() }
 
-        // Initialize base class due to Gson ignoring Kotlin default constructor values
-        events.forEach {event ->
-            event.UID = UUID.randomUUID().toString()
+        // Initialize base class due to Gson ignoring Kotlin default constructor values, also enumerate id's
+        events.forEachIndexed { index, event ->
+            event.UID = index.toString()
             event.Deltas = arrayListOf()
         }
 
@@ -125,35 +126,37 @@ class QTMerge {
             |       <meta charset="utf-8">
             |       <title>qtmerge</title>
             |       <link rel="stylesheet" href="../styles/screen.css">
+            |       <link rel="stylesheet" href="qtmerge.css">
             |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
             |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
             |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
             |   </head>
             |   <body>
+            |   <div id="header">
             |   <p class="timestamp">Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
-            |       <!-- a href="qtmerge.json">qtmerge.json</a> (<a href="qtmerge-pretty.json">qtmerge-pretty.json</a>) || -->
             |       Sources:
             |       <a href="http://qcodefag.github.io/">Q Posts</a> (qcodefag.github.io) |
-            |       <a href="http://trumptwitterarchive.com/">Trump Tweets</a> (trumptwitterarchive.com)
+            |       <a href="http://trumptwitterarchive.com/">Trump Tweets</a> (trumptwitterarchive.com) ||
+            |       <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
             |   </p>
+            |   </div>
             |""".trimMargin())
 
         out.append("""<table>
             |   <tr>
             |       <th>Time</th>
-            |       <th>Trip</th>
+            |       <th>Trip (ID)</th>
             |       <th>Link</th>
             |       <th>Text</th>
-            |       <th>Tweet Time Diffs</th>
             |   </tr>
             |""".trimMargin())
 
         val ref = Regex(""">>(\d+)""")
         events.reversed().forEach {
-            out.appendln("  <tr id=\"${it.UID}\">")
+            out.appendln("  <tr class=\"event\" id=\"${it.UID}\" data-timestamp='${MakeJSONTimestamp(it.Timestamp())}'>")
             out.appendln("      <td class=\"e-timestamp\">${it.Timestamp().format(formatter)}</td>")
-            out.appendln("      <td class=\"e-trip\">${it.Trip()}</td>")
+            out.appendln("      <td class=\"e-trip\">${it.Trip()}<br>(${it.ID()})</td>")
             out.appendln("      <td class=\"e-type\"><a href=\"${it.Reference()}\">${it.Type()}</a></td>")
             var images = ""
             it.Images().forEach {
@@ -181,19 +184,36 @@ class QTMerge {
                 "<a href=\"$refurl${match.groups[1]!!.value}\">${match.value}</a>"
             })
             out.appendln("        <td class=\"e-text\">$images$text</td>")
-            var diffs = ""
-            it.Deltas.forEach { delta ->
-                val minutes = (it.Timestamp().minute - delta.Timestamp().minute).toLong()
-                val searchtime = delta.Timestamp().minusMinutes(minutes).format(formatter)
-                diffs += "<span data-id=\"${delta.UID}\" class=\"delta\" title=\"~ $searchtime\">$minutes</span> "
-            }
-            out.appendln("        <td class=\"e-diffs\">$diffs</td>")
             out.appendln("    </tr>")
         }
 
         out.appendln("</table>")
+        out.appendln("""
+            |<div id="scratchPad">
+            |<table id="scratchTable">
+            |   <tr>
+            |       <th>#</th>
+            |       <th>Time</th>
+            |       <th>Trip (ID)</th>
+            |       <th>Link</th>
+            |       <th>Text</th>
+            |   </tr>
+            |</table>
+            |<div id="scratchTimes"></div>
+            |</div>
+            |""".trimMargin())
+
         out.append("""<script type="text/javascript" src="qtmerge.js"></script>""")
         out.append("</body></html>")
         out.close()
+    }
+
+    fun MakeJSONTimestamp(timeStamp: ZonedDateTime) : JsonObject {
+        val ob = JsonObject()
+        ob.addProperty("unix", timeStamp.toEpochSecond())
+        ob.addProperty("hour", timeStamp.hour)
+        ob.addProperty("min", timeStamp.minute)
+        ob.addProperty("sec", timeStamp.second)
+        return ob
     }
 }
