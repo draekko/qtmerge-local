@@ -23,6 +23,8 @@ data class TTweet(
 
     override fun ID(): String = id_str
 
+    override fun Board(): String = ""
+
     override fun Trip(): String {
         return "realDonaldTrump"
     }

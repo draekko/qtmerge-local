@@ -146,7 +146,7 @@ class QTMerge {
         out.append("""<table>
             |   <tr>
             |       <th>Time</th>
-            |       <th>Trip (ID)</th>
+            |       <th>Trip (ID) [Board]</th>
             |       <th>Link</th>
             |       <th>Text</th>
             |   </tr>
@@ -156,7 +156,7 @@ class QTMerge {
         events.reversed().forEach {
             out.appendln("  <tr class=\"event\" id=\"${it.UID}\" data-timestamp='${MakeJSONTimestamp(it.Timestamp())}'>")
             out.appendln("      <td class=\"e-timestamp\">${it.Timestamp().format(formatter)}</td>")
-            out.appendln("      <td class=\"e-trip\">${it.Trip()}<br>(${it.ID()})</td>")
+            out.appendln("      <td class=\"e-trip\">${it.Trip()}<br>(${it.ID()})${if(it.Board().isNotEmpty()) "<br>[${it.Board()}]" else ""}</td>")
             out.appendln("      <td class=\"e-type\"><a href=\"${it.Reference()}\">${it.Type()}</a></td>")
             var images = ""
             it.Images().forEach {
@@ -194,7 +194,7 @@ class QTMerge {
             |   <tr>
             |       <th>#</th>
             |       <th>Time</th>
-            |       <th>Trip (ID)</th>
+            |       <th>Trip (ID) [Board]</th>
             |       <th>Link</th>
             |       <th>Text</th>
             |   </tr>

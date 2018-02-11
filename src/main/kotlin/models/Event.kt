@@ -9,6 +9,7 @@ abstract class Event(
 ) {
     abstract fun Type() : String
     abstract fun ID() : String
+    abstract fun Board(): String
     abstract fun Trip() : String
     abstract fun Reference() : String
     abstract fun Timestamp() : ZonedDateTime

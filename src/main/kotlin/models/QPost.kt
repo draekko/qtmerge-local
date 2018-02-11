@@ -30,6 +30,8 @@ data class QPost(
         return id
     }
 
+    override fun Board(): String = source
+
     override fun Trip(): String {
         return trip
     }

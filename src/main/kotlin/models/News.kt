@@ -16,6 +16,8 @@ class News(
         return id
     }
 
+    override fun Board(): String = ""
+
     override fun Images(): List<Pair<String?, String?>> {
         return listOf(Pair(imageUrl, imageUrl))
     }
