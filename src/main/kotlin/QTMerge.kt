@@ -119,21 +119,26 @@ class QTMerge {
 
     fun ExportHtml() {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-        val out = File("$RESULTDIR/qtmerge.html").outputStream().bufferedWriter()
+        val out = File("$RESULTDIR/index.html").outputStream().bufferedWriter()
         out.append("""<!doctype html>
             |<html lang="en">
             |   <head>
             |       <meta charset="utf-8">
             |       <title>qtmerge</title>
+            |       <link rel="stylesheet" href="../styles/reset.css">
             |       <link rel="stylesheet" href="../styles/screen.css">
             |       <link rel="stylesheet" href="qtmerge.css">
             |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
             |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
             |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+            |       <!--
+            |         -- qtmerge v2018.1
+            |         -- http://anonsw.github.com/qtmerge/
+            |         -->
             |   </head>
             |   <body>
             |   <div id="header">
-            |   <p class="timestamp">Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
+            |   <p class="timestamp">Version: 2018.1 &mdash; Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
             |       Sources:
             |       <a href="http://qcodefag.github.io/">Q Posts</a> (qcodefag.github.io) |
