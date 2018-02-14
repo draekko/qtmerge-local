@@ -21,6 +21,7 @@ import java.util.*
 
 // TODO: Switch to Kotson?
 
+val VERSION = "2018.2-1"
 val DATADIR = System.getProperty("user.dir") + "/data"
 val RESULTDIR = System.getProperty("user.dir") + "/anonsw.github.io/qtmerge"
 
@@ -131,14 +132,17 @@ class QTMerge {
             |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
             |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
             |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+            |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
+            |       <script type="text/javascript" src="../scripts/moment.min.js"></script>
+            |       <script type="text/javascript" src="../scripts/moment-timezone-with-data-2012-2022.js"></script>
             |       <!--
-            |         -- qtmerge v2018.2-1
+            |         -- qtmerge v$VERSION
             |         -- http://anonsw.github.com/qtmerge/
             |         -->
             |   </head>
             |   <body>
             |   <div id="header">
-            |   <p class="timestamp">Version: 2018.2-1 &mdash; Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
+            |   <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
             |       Sources:
             |       <a href="http://qcodefag.github.io/">Q Posts</a> (qcodefag.github.io) |
@@ -195,6 +199,14 @@ class QTMerge {
         out.appendln("</table>")
         out.appendln("""
             |<div id="scratchPad">
+            |<div id="scratchHeader">
+            |<div id="scratchActions">
+            |<input type="button" value="Clear Scratch Pad" onclick="removeScratchEvents();">
+            |<input type="button" value="Generate Map" disabled="disabled">
+            |</div>
+            |<p id="scratchVersion">qtmerge v$VERSION</p>
+            |<p id="scratchTimestamp"></p>
+            |</div>
             |<table id="scratchTable">
             |   <tr>
             |       <th>#</th>
