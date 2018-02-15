@@ -1,0 +1,30 @@
+package models
+
+data class InfChThread(
+    var no : Int,
+    var com : String,
+    var name : String,
+    var trip : String,
+    var time : Int,
+    var omitted_posts : Int,
+    var omitted_images : Int,
+    var replies : Int,
+    var images : Int,
+    var sticky : Int,
+    var locked : Int,
+    var cyclical : String,
+    var bumplocked : String,
+    var last_modified : Int,
+    var tn_h : Int,
+    var tn_w : Int,
+    var h : Int,
+    var w : Int,
+    var fsize : Int,
+    var filename : String,
+    var ext : String,
+    var tim : String,
+    var fpath : Int,
+    var spoiler : Int,
+    var md5 : String,
+    var resto : Int
+)

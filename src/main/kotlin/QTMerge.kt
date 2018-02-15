@@ -21,7 +21,7 @@ import java.util.*
 
 // TODO: Switch to Kotson?
 
-val VERSION = "2018.2-1"
+val VERSION = "2018.2-2"
 val DATADIR = System.getProperty("user.dir") + "/data"
 val RESULTDIR = System.getProperty("user.dir") + "/anonsw.github.io/qtmerge"
 
@@ -33,6 +33,7 @@ class QTMerge {
     var events : MutableList<Event> = arrayListOf()
 
     init {
+        UpdateSources()
         LoadSources()
 
         CalcOffsets()
@@ -72,6 +73,11 @@ class QTMerge {
         }
     }
 
+    fun UpdateSources() {
+        QCodeFagImporter("$DATADIR/QCodefag.github.io/data").UpdateQPosts("greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
+        QCodeFagImporter("$DATADIR/QCodefag.github.io/data").UpdateQPosts("qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json")
+    }
+
     fun LoadSources() {
         //events.addAll(TwitterArchiveImporter("$DATADIR/Trump").ImportLatest())
         events.addAll(TwitterArchiveImporter("$DATADIR/Trump/2017").ImportLatest())
@@ -95,6 +101,7 @@ class QTMerge {
 
         println("Total Events: ${events.size}")
     }
+
 
     fun CalcOffsets() {
         val qq : MutableList<Event> = arrayListOf()
