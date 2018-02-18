@@ -3,6 +3,7 @@ package controllers.mirror
 import com.google.gson.Gson
 import extensions.iterate
 import extensions.readBytesDelayed
+import models.events.Event
 import models.mirror.FourChanBoardActivity
 import java.io.File
 import java.io.FileNotFoundException
@@ -50,5 +51,9 @@ class FourChanMirror(
                 println("${it.time}")
             }
         }
+    }
+
+    override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

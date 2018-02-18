@@ -1,5 +1,6 @@
 package models.events
 
+import models.importer.QCodeFagPost
 import models.mirror.InfChPost
 import utils.HTML.Companion.cleanHTMLText
 import java.time.Instant
@@ -18,11 +19,11 @@ data class PostEvent(
         var trip : String?,
         var text : String?,
         var subject : String?,
-        var source : String,
         var link : String,
         var threadId : String,
         var images : MutableList<PostEventImage>?,
-        var references : MutableList<PostEvent>
+        var postReferences: MutableList<PostEvent>,
+        private var references : MutableList<String>
 ) : Event() {
     data class PostEventImage(
             var url : String?,
@@ -43,9 +44,9 @@ data class PostEvent(
                     infChPost.trip,
                     cleanHTMLText(infChPost.com),
                     infChPost.sub,
-                    "8chan_$board",
                     "https://8ch.net/$board/res/${infChPost.resto}.html#${infChPost.no}",
                     infChPost.resto.toString(),
+                    mutableListOf(),
                     mutableListOf(),
                     mutableListOf()
             )
@@ -59,6 +60,42 @@ data class PostEvent(
 
             return postEvent
         }
+
+        fun fromQCodeFagPost(board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
+            val postEvent = PostEvent(
+                    "github.com",
+                    board,
+                    qCodeFagPost.id,
+                    qCodeFagPost.userId,
+                    qCodeFagPost.timestamp,
+                    qCodeFagPost.title,
+                    qCodeFagPost.name,
+                    qCodeFagPost.email,
+                    qCodeFagPost.trip,
+                    qCodeFagPost.text,
+                    qCodeFagPost.subject,
+                    qCodeFagPost.link, // https://github.com/QCodefag/QCodefag.github.io/tree/master/data
+                    //"https://8ch.net/$board/res/${qCodeFagPost.resto}.html#${qCodeFagPost.no}",
+                    qCodeFagPost.threadId?:"",
+                    mutableListOf(),
+                    mutableListOf(),
+                    mutableListOf()
+            )
+
+            if(qCodeFagPost.images?.isNotEmpty() == true) {
+                qCodeFagPost.images!!.forEach {
+                    postEvent.images!!.add(PostEventImage(it.url, it.filename))
+                }
+            }
+
+            return postEvent
+        }
+
+    }
+
+    init {
+        references.addAll(postReferences.map { it.ReferenceID() })
+        // TODO: detect other references
     }
 
     override fun Host(): String = host
@@ -67,11 +104,15 @@ data class PostEvent(
 
     override fun ID(): String = id
 
-    override fun Board(): String = source
+    override fun Board(): String = board
 
     override fun Trip(): String = trip?:"<anon>"
 
-    override fun Reference(): String = link
+    override fun Link(): String = link
+
+    override fun ReferenceID(): String = "$host-$board-$id"
+
+    override fun References(): List<String> = references
 
     override fun RawTimestamp(): String = timestamp.toString()
 

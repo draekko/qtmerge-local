@@ -6,7 +6,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 data class TweetEvent(
-        val source : String,
+        val host : String,
         val board : String,
         val id_str : String,
         val text : String?,
@@ -14,7 +14,8 @@ data class TweetEvent(
         val retweet_count : Long,
         val in_reply_to_user_id_str : String?,
         val favorite_count : Long,
-        val is_retweet : Boolean
+        val is_retweet : Boolean,
+        private val references : MutableList<String>
 ) : Event() {
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
@@ -29,14 +30,19 @@ data class TweetEvent(
                 tweet.retweet_count,
                 tweet.in_reply_to_user_id_str,
                 tweet.favorite_count,
-                tweet.is_retweet
+                tweet.is_retweet,
+                mutableListOf()
             )
 
             return tweetEvent
         }
     }
 
-    override fun Host(): String = "twitter.com"
+    init {
+        // TODO: detect references
+    }
+
+    override fun Host(): String = host
 
     override fun Type(): String = "Tweet"
 
@@ -46,9 +52,13 @@ data class TweetEvent(
 
     override fun Trip(): String = board
 
-    override fun Reference(): String {
-        return "http://twitter.com/realDonaldTrump/status/$id_str"
+    override fun Link(): String {
+        return "http://twitter.com/$board/status/$id_str"
     }
+
+    override fun ReferenceID(): String = "$host-$board-$id_str"
+
+    override fun References(): List<String> = references
 
     override fun RawTimestamp(): String {
         return created_at

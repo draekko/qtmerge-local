@@ -158,7 +158,7 @@ class InfChMirror(
         //
     }
 
-    fun MirrorSearch(trips : List<String> = listOf(), content : Regex? = null) : List<Event> {
+    override fun MirrorSearch(trips : List<String>, content : Regex?, referenceDepth: ReferenceDepth) : List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "8ch"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
@@ -188,12 +188,13 @@ class InfChMirror(
                     postset.posts.forEach { post ->
                         val postEvent = PostEvent.fromInfChPost(board, post)
                         var include = false
-                        // TODO: perform searches
-                        //println(">> post: ${post.no}")
+
+                        // Search on trip
                         if(trips.isNotEmpty() && trips.contains(post.trip)) {
                             include = true
                         }
 
+                        // Search on content
                         if(!include) {
                             if (content != null) {
                                 val results = content.find(postEvent.Text())

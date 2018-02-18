@@ -2,7 +2,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import controllers.importer.QCodeFagImporter
-import controllers.importer.TwitterArchiveImporter
 import controllers.mirror.InfChMirror
 import controllers.mirror.TwitterArchiveMirror
 import models.events.Event
@@ -167,7 +166,7 @@ class QTMerge(
             out.appendln("  <tr class=\"event\" id=\"${it.UID}\" data-timestamp='${MakeJSONTimestamp(it.Timestamp())}'>")
             out.appendln("      <td class=\"e-timestamp\">${it.Timestamp().format(formatter)}</td>")
             out.appendln("      <td class=\"e-trip\">${it.Trip()}<br>(${it.ID()})${if(it.Board().isNotEmpty()) "<br>[${it.Board()}]" else ""}</td>")
-            out.appendln("      <td class=\"e-type\"><a href=\"${it.Reference()}\">${it.Type()}</a></td>")
+            out.appendln("      <td class=\"e-type\"><a href=\"${it.Link()}\">${it.Type()}</a></td>")
             var images = ""
             it.Images().forEach {
                 if (it.first != null) {
@@ -186,7 +185,7 @@ class QTMerge(
                 images += "<br>"
             }
             var text = escapeHTML(it.Text())
-            var refurl = it.Reference().replaceAfter("#", "")
+            var refurl = it.Link().replaceAfter("#", "")
             if(!refurl.endsWith("#")) {
                 refurl += "#"
             }

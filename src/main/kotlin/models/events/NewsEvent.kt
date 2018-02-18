@@ -12,7 +12,8 @@ class NewsEvent(
         var date : Long,
         var headline : String?,
         var description : String?,
-        var imageUrl : String
+        var imageUrl : String,
+        private var references : MutableList<String>
 ) : Event() {
     override fun Host(): String = host
 
@@ -26,7 +27,11 @@ class NewsEvent(
 
     override fun RawTimestamp(): String = date.toString()
 
-    override fun Reference(): String = url
+    override fun Link(): String = url
+
+    override fun ReferenceID(): String = "$host-$url-$id"
+
+    override fun References(): List<String> = references
 
     override fun Text(): String = headline?:url?:""
 

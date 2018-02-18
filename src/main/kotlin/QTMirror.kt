@@ -25,10 +25,10 @@ class QTMirror(
     init {
         val outputDirectory = DATADIR + File.separator + mirrorLabel
 
-        TwitterArchiveMirror(outputDirectory, "realdonaldtrump").Mirror()
+        TwitterArchiveMirror(outputDirectory, "realDonaldTrump").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "hillaryclinton").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "senatorsessions").Mirror()
-//        TwitterArchiveMirror(outputDirectory, "potus").Mirror()
+//        TwitterArchiveMirror(outputDirectory, "POTUS").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "genflynn").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "govpencein").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "vp").Mirror()

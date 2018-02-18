@@ -1,4 +1,5 @@
 import controllers.mirror.InfChMirror
+import controllers.mirror.Mirror
 import models.events.Event
 import java.io.File
 import java.time.ZoneId
@@ -37,12 +38,12 @@ class QTSearch(
         println("Loading events...")
         // Load events that match search criteria and options
         val events : MutableList<Event> = arrayListOf()
-        events.addAll(InfChMirror(inputDirectory, "qresearch").MirrorSearch(content = Regex(""".*anonsw.*""")))
+        events.addAll(InfChMirror(inputDirectory, "qresearch").MirrorSearch(content = Regex(""".*anonsw.*"""), referenceDepth = Mirror.ReferenceDepth.Shallow))
 
         // Number events
         events.forEachIndexed { index, event ->
             event.UID = index.toString()
-            println(">>${event.Reference()}")
+            println(">>${event.Link()}")
             println(event.Text())
         }
         println("Loaded ${events.size} events.")
@@ -50,7 +51,7 @@ class QTSearch(
         println("Creating links...")
         // Create links
         events.forEachIndexed { index, event ->
-
+            println(event.ReferenceID())
         }
     }
 }

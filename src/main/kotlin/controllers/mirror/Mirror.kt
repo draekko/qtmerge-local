@@ -1,6 +1,7 @@
 package controllers.mirror
 
 import QTMirror.Companion.ZONEID
+import models.events.Event
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -12,8 +13,19 @@ import java.time.Instant
 
 
 abstract class Mirror(
-        val outputDirectory : String
+    val outputDirectory : String
 ) {
+    enum class ReferenceDepth {
+        None,
+        Shallow,
+        Deep
+    }
+    abstract fun MirrorSearch(
+            trips : List<String> = listOf(),
+            content : Regex? = null,
+            referenceDepth : ReferenceDepth = ReferenceDepth.None
+    ) : List<Event>
+
     fun MakeDirectory(path : String) : Boolean {
         var isSuccessful = true
         val outDir = File(path)

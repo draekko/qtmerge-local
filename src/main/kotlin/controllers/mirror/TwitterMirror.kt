@@ -1,5 +1,6 @@
 package controllers.mirror
 
+import models.events.Event
 import java.io.File
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -25,5 +26,9 @@ class TwitterMirror(
                 return
             }
         }
+    }
+
+    override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

@@ -18,13 +18,11 @@ class TwitterArchiveMirror(
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
 ) : Mirror(outputDirectory) {
-    val baseURL = "https://trumptwitterarchive.com/data"
-    //http://trumptwitterarchive.com/data/realdonaldtrump/2017.json -O 2017/2017-${DATE}.json
 
     fun Mirror() {
         val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
         if (MakeDirectory(mirrorRoot)) {
-            val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
+            val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
             val filesRoot = mirrorRoot + File.separator + "files"
             val years = (2017..2018)
 
@@ -38,7 +36,7 @@ class TwitterArchiveMirror(
             println(">> board: $board")
             years.forEachIndexed { index, year ->
                 println(">> thread: $year: ${index + 1} / ${years.count()} (% ${Math.round(index.toFloat()/years.count()*100)})")
-                val tweetURL = URL("http://trumptwitterarchive.com/data/$board/$year.json")
+                val tweetURL = URL("http://trumptwitterarchive.com/data/${board.toLowerCase()}/$year.json")
                 val tweetFile = File(boardRoot + File.separator + "$year.json")
 
                 // Update activity json if necessary
@@ -75,10 +73,10 @@ class TwitterArchiveMirror(
         //
     }
 
-    fun MirrorSearch(trips : List<String> = listOf()) : List<Event> {
+    override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
-        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
+        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
         val years = (2017..2018)
 
         println(">> board: $board")
