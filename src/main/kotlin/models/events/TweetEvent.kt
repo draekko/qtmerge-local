@@ -1,12 +1,13 @@
-package models
+package models.events
 
+import models.mirror.TwitterArchiveTweet
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
-data class TTweet(
+data class TweetEvent(
         val source : String,
+        val board : String,
         val id_str : String,
         val text : String?,
         val created_at : String,
@@ -17,17 +18,33 @@ data class TTweet(
 ) : Event() {
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
+
+        fun fromTwitterArchiveTweet(board : String, tweet: TwitterArchiveTweet) : TweetEvent {
+            val tweetEvent = TweetEvent(
+                "twitterarchive.com",
+                board,
+                tweet.id_str,
+                tweet.text,
+                tweet.created_at,
+                tweet.retweet_count,
+                tweet.in_reply_to_user_id_str,
+                tweet.favorite_count,
+                tweet.is_retweet
+            )
+
+            return tweetEvent
+        }
     }
+
+    override fun Host(): String = "twitter.com"
 
     override fun Type(): String = "Tweet"
 
     override fun ID(): String = id_str
 
-    override fun Board(): String = ""
+    override fun Board(): String = board
 
-    override fun Trip(): String {
-        return "realDonaldTrump"
-    }
+    override fun Trip(): String = board
 
     override fun Reference(): String {
         return "http://twitter.com/realDonaldTrump/status/$id_str"

@@ -2,15 +2,18 @@ package controllers.importer
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonSyntaxException
-import models.*
+import models.events.NewsEvent
+import models.events.PostEvent
+import models.mirror.InfChPostSet
+import models.mirror.InfChThread
+import models.mirror.InfChThreadPage
 import java.io.File
 import java.net.URL
 
 class QCodeFagImporter(importDirectory : String) : Importer(importDirectory) {
-    fun ImportQPosts(board : String, hasTripCode: Boolean, forum : String, fileName : String) : List<QPost> {
+    fun ImportQPosts(board : String, hasTripCode: Boolean, forum : String, fileName : String) : List<PostEvent> {
         println("Importing qposts from $importDirectory/$fileName...")
-        return Gson().fromJson(File("$importDirectory/$fileName").readText(), Array<QPost>::class.java).filter { it.Timestamp().isAfter(startTime) }
+        return Gson().fromJson(File("$importDirectory/$fileName").readText(), Array<PostEvent>::class.java).filter { it.Timestamp().isAfter(startTime) }
     }
 
     fun UpdateQPosts(board : String, hasTripCode: Boolean, forum : String, fileName : String) {
@@ -31,7 +34,7 @@ class QCodeFagImporter(importDirectory : String) : Importer(importDirectory) {
 
             val postset = Gson().fromJson(URL("https://8ch.net/$board/res/${thread.no}.json").readText(), InfChPostSet::class.java)
             postset.posts.filter { it.trip == "!UW.yye1fxo" }.forEach {
-                val qpost = QPost.fromInfChPost(board, it)
+                val qpost = PostEvent.fromInfChPost(board, it)
                 if(posts.count { it.id == qpost.id } == 0) {
                     posts.add(qpost)
                     println("New post: $board/${thread.no}#${qpost.id}")
@@ -41,8 +44,8 @@ class QCodeFagImporter(importDirectory : String) : Importer(importDirectory) {
         File("$importDirectory/$fileName").writeText(gson.toJson(posts))
     }
 
-    fun ImportNews(fileName: String) : List<News> {
+    fun ImportNews(fileName: String) : List<NewsEvent> {
         println("Importing news from $importDirectory/$fileName...")
-        return Gson().fromJson(File("$importDirectory/$fileName").readText(), Array<News>::class.java).filter { it.Timestamp().isAfter(startTime)}
+        return Gson().fromJson(File("$importDirectory/$fileName").readText(), Array<NewsEvent>::class.java).filter { it.Timestamp().isAfter(startTime)}
     }
 }

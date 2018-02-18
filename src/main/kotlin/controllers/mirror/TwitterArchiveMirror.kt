@@ -1,0 +1,106 @@
+package controllers.mirror
+
+import com.google.gson.Gson
+import extensions.iterate
+import extensions.readBytesDelayed
+import models.events.Event
+import models.events.TweetEvent
+import models.mirror.TwitterArchiveTweet
+import java.io.File
+import java.io.FileNotFoundException
+import java.net.URL
+import java.time.Instant
+import java.time.ZonedDateTime
+
+class TwitterArchiveMirror(
+        outputDirectory : String,
+        val board : String,
+        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
+        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
+) : Mirror(outputDirectory) {
+    val baseURL = "https://trumptwitterarchive.com/data"
+    //http://trumptwitterarchive.com/data/realdonaldtrump/2017.json -O 2017/2017-${DATE}.json
+
+    fun Mirror() {
+        val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
+        if (MakeDirectory(mirrorRoot)) {
+            val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
+            val filesRoot = mirrorRoot + File.separator + "files"
+            val years = (2017..2018)
+
+            if (!MakeDirectory(boardRoot)) {
+                return
+            }
+            if (!MakeDirectory(filesRoot)) {
+                return
+            }
+
+            println(">> board: $board")
+            years.forEachIndexed { index, year ->
+                println(">> thread: $year: ${index + 1} / ${years.count()} (% ${Math.round(index.toFloat()/years.count()*100)})")
+                val tweetURL = URL("http://trumptwitterarchive.com/data/$board/$year.json")
+                val tweetFile = File(boardRoot + File.separator + "$year.json")
+
+                // Update activity json if necessary
+                var shouldUpdate = false
+                try {
+                    if (tweetFile.iterate(tweetURL.readBytesDelayed())) {
+                        println("  Updated tweets for $board")
+                        shouldUpdate = true
+                    }
+                } catch (e: FileNotFoundException) {
+                    println("Unable to find tweets for $board: $e")
+                    return
+                }
+
+                if(shouldUpdate) {
+                    val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
+                    tweets.forEach { tweet ->
+                        MirrorReferences(filesRoot, tweet.id_str, tweet.text)
+                    }
+                }
+            }
+        }
+    }
+
+    fun MirrorReferences(root : String, id : String, text : String) {
+        // TODO:
+        //   * Detect/fix broken links
+        //   * Download links to tweet id folder:
+        //      * Youtube videos
+        //      * NewsEvent websites, web scrape
+        //      * Twitter references
+        //      * Etc.
+        //   * Report unhandled links
+        //
+    }
+
+    fun MirrorSearch(trips : List<String> = listOf()) : List<Event> {
+        val eventList: MutableList<Event> = arrayListOf()
+        val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
+        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
+        val years = (2017..2018)
+
+        println(">> board: $board")
+        years.forEachIndexed { index, year ->
+            val tweetFile = File(boardRoot + File.separator + "$year.json")
+
+            val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
+            tweets.forEach { tweet ->
+                val tweetEvent = TweetEvent.fromTwitterArchiveTweet(board, tweet)
+                if (tweetEvent.Timestamp().toInstant().isAfter(startTime.toInstant()) &&
+                        tweetEvent.Timestamp().toInstant().isBefore(stopTime.toInstant())) {
+                    var include = true
+                    // TODO: perform search
+                    //println(">> post: ${post.no}")
+
+                    if(include) {
+                        eventList.add(tweetEvent)
+                    }
+                }
+            }
+        }
+
+        return eventList
+    }
+}

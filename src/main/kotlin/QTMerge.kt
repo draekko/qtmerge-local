@@ -3,37 +3,35 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import controllers.importer.QCodeFagImporter
 import controllers.importer.TwitterArchiveImporter
-import models.Event
-import org.apache.poi.common.usermodel.HyperlinkType
-import org.apache.poi.hssf.usermodel.HSSFWorkbook
-import org.apache.poi.hssf.util.HSSFColor
-import org.apache.poi.ss.usermodel.Font
-import org.apache.poi.ss.usermodel.HorizontalAlignment
-import org.apache.poi.ss.usermodel.IndexedColors
-import org.apache.poi.ss.util.CellRangeAddress
+import controllers.mirror.InfChMirror
+import controllers.mirror.TwitterArchiveMirror
+import models.events.Event
+import utils.HTML.Companion.escapeHTML
 import java.io.File
-import java.io.FileOutputStream
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.*
 
 // TODO: Switch to Kotson?
 
-val VERSION = "2018.2-2"
-val DATADIR = System.getProperty("user.dir") + "/data"
+val VERSION = "2018.2-3"
+val DATADIR = System.getProperty("user.dir") + File.separator + "data"
+val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
 val RESULTDIR = System.getProperty("user.dir") + "/anonsw.github.io/qtmerge"
+val QTRIPS = listOf("!UW.yye1fxo", "!ITPb.qbhqo" )
+val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZoneId.of("US/Eastern"))
 
 fun main(args: Array<String>) {
     QTMerge()
 }
 
-class QTMerge {
+class QTMerge(
+    var mirrorLabel : String = "2018-02-15"
+) {
     var events : MutableList<Event> = arrayListOf()
 
     init {
-        UpdateSources()
         LoadSources()
 
         CalcOffsets()
@@ -51,7 +49,7 @@ class QTMerge {
         var totalPosts: Long = 0
 
         events.forEach {
-            if(it.Type() == "QPost") {
+            if(it.Type() == "Post") {
                 totalPosts++
                 if(lastTime == null) {
                     lastTime = it.Timestamp()
@@ -73,23 +71,18 @@ class QTMerge {
         }
     }
 
-    fun UpdateSources() {
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data").UpdateQPosts("greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data").UpdateQPosts("qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json")
-    }
-
     fun LoadSources() {
-        //events.addAll(TwitterArchiveImporter("$DATADIR/Trump").ImportLatest())
-        events.addAll(TwitterArchiveImporter("$DATADIR/Trump/2017").ImportLatest())
-        events.addAll(TwitterArchiveImporter("$DATADIR/Trump/2018").ImportLatest())
         events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json"))
         events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("cbts", true, "8ch.net", "cbtsTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json"))
         events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("pol", false, "4chan.org", "pol4chanPosts.json"))
         events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("pol", true, "8ch.net", "polTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json"))
         events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("thestorm", true, "8ch.net", "thestormTrip8chanPosts.json"))
         //events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportNews("news.json"))
+
+        val inputDirectory = MIRRORDIR + File.separator + mirrorLabel
+        events.addAll(TwitterArchiveMirror(inputDirectory, "realdonaldtrump", STARTTIME).MirrorSearch())
+        events.addAll(InfChMirror(inputDirectory, "greatawakening", STARTTIME).MirrorSearch(trips = QTRIPS))
+        events.addAll(InfChMirror(inputDirectory, "qresearch", STARTTIME).MirrorSearch(trips = QTRIPS))
 
         events.sortBy { it.Timestamp().toEpochSecond() }
 
@@ -107,7 +100,7 @@ class QTMerge {
         val qq : MutableList<Event> = arrayListOf()
         var resetQQ = false
         events.forEach { event ->
-            if(event.Type() == "QPost") {
+            if(event.Type() == "Post") {
                 resetQQ = true
             } else if(event.Type() == "Tweet") {
                 if(resetQQ) { qq.clear(); resetQQ = false }
@@ -152,7 +145,8 @@ class QTMerge {
             |   <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
             |       Sources:
-            |       <a href="http://qcodefag.github.io/">Q Posts</a> (qcodefag.github.io) |
+            |       Anon SW Mirror (anonsw.github.io) |
+            |       <a href="http://qanonposts.com/">Q Posts</a> (qanonposts.com) |
             |       <a href="http://trumptwitterarchive.com/">Trump Tweets</a> (trumptwitterarchive.com) ||
             |       <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
             |   </p>
@@ -191,7 +185,7 @@ class QTMerge {
             if(images.isNotEmpty() && it.Text().isNotEmpty()) {
                 images += "<br>"
             }
-            var text = it.Text()
+            var text = escapeHTML(it.Text())
             var refurl = it.Reference().replaceAfter("#", "")
             if(!refurl.endsWith("#")) {
                 refurl += "#"
@@ -199,6 +193,7 @@ class QTMerge {
             text = text.replace(ref, { match ->
                 "<a href=\"$refurl${match.groups[1]!!.value}\">${match.value}</a>"
             })
+            // TODO: add spans for markers and known acronyms
             out.appendln("        <td class=\"e-text\">$images$text</td>")
             out.appendln("    </tr>")
         }

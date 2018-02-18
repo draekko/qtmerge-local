@@ -1,10 +1,8 @@
 package controllers.importer
 
-import models.Event
 import java.io.File
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.chrono.ChronoZonedDateTime
 
 abstract class Importer(protected val importDirectory : String) {
     val startTime : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZoneId.of("US/Eastern"))

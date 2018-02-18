@@ -1,4 +1,4 @@
-package models
+package models.events
 
 import java.time.ZonedDateTime
 
@@ -6,6 +6,7 @@ abstract class Event(
         @Transient var UID : String = "",
         @Transient var Deltas : MutableList<Event> = arrayListOf()
 ) {
+    abstract fun Host() : String
     abstract fun Type() : String
     abstract fun ID() : String
     abstract fun Board(): String
