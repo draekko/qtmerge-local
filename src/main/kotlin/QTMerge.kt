@@ -194,7 +194,7 @@ class QTMerge(
             if(images.isNotEmpty() && it.Text().isNotEmpty()) {
                 images += "<br>"
             }
-            var text = escapeHTML(it.Text())
+            var text = it.Text() //escapeHTML(it.Text())
             var refurl = it.Link().replaceAfter("#", "")
             if(!refurl.endsWith("#")) {
                 refurl += "#"
