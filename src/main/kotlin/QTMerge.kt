@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 // TODO: Switch to Kotson?
 
-val VERSION = "2018.2-3"
+val VERSION = "2018.2-4"
 val DATADIR = System.getProperty("user.dir") + File.separator + "data"
 val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
 val RESULTDIR = System.getProperty("user.dir") + "/anonsw.github.io/qtmerge"
@@ -71,17 +71,27 @@ class QTMerge(
     }
 
     fun LoadSources() {
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("cbts", true, "8ch.net", "cbtsTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("pol", false, "4chan.org", "pol4chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("pol", true, "8ch.net", "polTrip8chanPosts.json"))
-        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("thestorm", true, "8ch.net", "thestormTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qcodefag", "cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qcodefag", "cbts", true, "8ch.net", "cbtsTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qcodefag", "pol", false, "4chan.org", "pol4chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qcodefag", "pol", true, "8ch.net", "polTrip8chanPosts.json"))
+        events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportQPosts("qcodefag", "thestorm", true, "8ch.net", "thestormTrip8chanPosts.json"))
+
         //events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportNews("news.json"))
 
         val inputDirectory = MIRRORDIR + File.separator + mirrorLabel
         events.addAll(TwitterArchiveMirror(inputDirectory, "realdonaldtrump", STARTTIME).MirrorSearch())
         events.addAll(InfChMirror(inputDirectory, "greatawakening", STARTTIME).MirrorSearch(trips = QTRIPS))
         events.addAll(InfChMirror(inputDirectory, "qresearch", STARTTIME).MirrorSearch(trips = QTRIPS))
+
+        // Capture qanonmap's data around the greatawakening reset
+        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
+                .ImportQPosts("qanonmap", "greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
+                .forEach { post ->
+                    if(events.find { it.Link() == post.Link() } == null) {
+                        events.add(post)
+                    }
+                }
 
         events.sortBy { it.Timestamp().toEpochSecond() }
 
@@ -143,10 +153,10 @@ class QTMerge(
             |   <div id="header">
             |   <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
-            |       Sources:
-            |       Anon SW Mirror (anonsw.github.io) |
-            |       <a href="http://qanonposts.com/">Q Posts</a> (qanonposts.com) |
-            |       <a href="http://trumptwitterarchive.com/">Trump Tweets</a> (trumptwitterarchive.com) ||
+            |       Data Sets:
+            |       <a href="http://qanonposts.com/">qcodefag</a> | <a href="http://qanonmap.github.io/">qanonmap</a> |
+            |       <a href="http://anonsw.github.io/">anonsw</a> |
+            |       <a href="http://trumptwitterarchive.com/">trumptwitterarchive</a> ||
             |       <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
             |   </p>
             |   </div>
@@ -165,7 +175,7 @@ class QTMerge(
         events.reversed().forEach {
             out.appendln("  <tr class=\"event\" id=\"${it.UID}\" data-timestamp='${MakeJSONTimestamp(it.Timestamp())}'>")
             out.appendln("      <td class=\"e-timestamp\">${it.Timestamp().format(formatter)}</td>")
-            out.appendln("      <td class=\"e-trip\">${it.Trip()}<br>(${it.ID()})${if(it.Board().isNotEmpty()) "<br>[${it.Board()}]" else ""}</td>")
+            out.appendln("      <td class=\"e-trip\">${it.Trip()}<br><span class=\"id\">(${it.ID()})</span>${if(it.Board().isNotEmpty()) "<br><span class=\"board\">[${it.Board()}]</span>" else ""}<br><span class=\"dataset\">${it.Dataset()}</span></td>")
             out.appendln("      <td class=\"e-type\"><a href=\"${it.Link()}\">${it.Type()}</a></td>")
             var images = ""
             it.Images().forEach {

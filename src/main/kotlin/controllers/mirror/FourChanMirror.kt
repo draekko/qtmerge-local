@@ -19,7 +19,7 @@ class FourChanMirror(
 ) : Mirror(outputDirectory) {
     val baseURL = "https://archive.4plebs.org"
 
-    fun Mirror() {
+    override fun Mirror() {
         val mirrorRoot = outputDirectory + File.separator + "4chan"
         if (MakeDirectory(mirrorRoot)) {
             val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
@@ -51,6 +51,10 @@ class FourChanMirror(
                 println("${it.time}")
             }
         }
+    }
+
+    override fun MirrorReferences() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {

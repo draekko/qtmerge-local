@@ -39,19 +39,22 @@ class QTSearch(
         // Load events that match search criteria and options
         val events : MutableList<Event> = arrayListOf()
         events.addAll(InfChMirror(inputDirectory, "qresearch").MirrorSearch(content = Regex(""".*anonsw.*"""), referenceDepth = Mirror.ReferenceDepth.Shallow))
+        println("Loaded ${events.size} events.")
 
+        println("Finding references...")
         // Number events
         events.forEachIndexed { index, event ->
             event.UID = index.toString()
-            println(">>${event.Link()}")
-            println(event.Text())
+            event.FindReferences()
         }
-        println("Loaded ${events.size} events.")
+        println("Found references.")
 
         println("Creating links...")
         // Create links
         events.forEachIndexed { index, event ->
             println(event.ReferenceID())
+            println(event.References())
+            println(event.Text())
         }
     }
 }

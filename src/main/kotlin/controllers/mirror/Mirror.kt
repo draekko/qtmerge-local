@@ -20,6 +20,8 @@ abstract class Mirror(
         Shallow,
         Deep
     }
+    abstract fun Mirror()
+    abstract fun MirrorReferences()
     abstract fun MirrorSearch(
             trips : List<String> = listOf(),
             content : Regex? = null,

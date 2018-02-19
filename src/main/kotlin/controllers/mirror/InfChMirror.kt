@@ -26,7 +26,7 @@ class InfChMirror(
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
 ) : Mirror(outputDirectory) {
 
-    fun Mirror() {
+    override fun Mirror() {
         val mirrorRoot = outputDirectory + File.separator + "8ch"
         if(MakeDirectory(mirrorRoot)) {
             val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
@@ -81,30 +81,35 @@ class InfChMirror(
 
                         // TODO: verify crc's? are some images scrubbed to prevent doxxing and then the crc mismatches? md5 in post data isn't updated for changes?
 
-                        // Check thread files and references
-                        if(!thread.tim.isNullOrEmpty()) {
-                            MirrorFile(threadUpdated, filesRoot, thread.tim!!, thread.filename!!, thread.ext?:"")
-                        }
-                        MirrorReferences(threadUpdated, boardRoot, thread.no, thread.no, listOf(thread.name, thread.com).joinToString("\n"))
+                        /*
+                        if(mirrorImages) {
+                            // Check thread files and references
+                            if (!thread.tim.isNullOrEmpty()) {
+                                MirrorFile(threadUpdated, filesRoot, thread.tim!!, thread.filename!!, thread.ext ?: "")
+                            }
+                            MirrorReferences(threadUpdated, boardRoot, thread.no, thread.no, listOf(thread.name, thread.com).joinToString("\n"))
 
-                        // Check post files and references
-                        val postset = Gson().fromJson(threadFile.readText(), InfChPostSet::class.java)
-                        postset.posts.forEachIndexed { postIndex, post ->
-                            if(postIndex == 0) {
-                                println(">> thread: ${thread.no} (${cleanHTMLText(post.sub?:"").lines().first()}): ${index + 1} / ${threads.size} (% ${Math.round(index.toFloat() / threads.size * 100)})")
-                                if (threadUpdated) {
-                                    println("    Updated thread ${thread.no} (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.time), ZONEID).format(DATEFORMATTER)})")
+                            // Check post files and references
+                            val postset = Gson().fromJson(threadFile.readText(), InfChPostSet::class.java)
+                            postset.posts.forEachIndexed { postIndex, post ->
+                                if (postIndex == 0) {
+                                    println(">> thread: ${thread.no} (${cleanHTMLText(post.sub
+                                            ?: "").lines().first()}): ${index + 1} / ${threads.size} (% ${Math.round(index.toFloat() / threads.size * 100)})")
+                                    if (threadUpdated) {
+                                        println("    Updated thread ${thread.no} (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.time), ZONEID).format(DATEFORMATTER)})")
+                                    }
+                                }
+                                if (!post.tim.isNullOrEmpty()) {
+                                    MirrorFile(threadUpdated, filesRoot, post.tim!!, post.filename!!, post.ext ?: "")
+                                }
+                                MirrorReferences(threadUpdated, boardRoot, thread.no, post.no, listOf(post.title, post.sub, post.com).joinToString("\n"))
+
+                                post.extra_files?.forEach { file ->
+                                    MirrorFile(threadUpdated, filesRoot, file.tim, file.filename, file.ext)
                                 }
                             }
-                            if(!post.tim.isNullOrEmpty()) {
-                                MirrorFile(threadUpdated, filesRoot, post.tim!!,  post.filename!!, post.ext?:"")
-                            }
-                            MirrorReferences(threadUpdated, boardRoot, thread.no, post.no, listOf(post.title, post.sub, post.com).joinToString("\n"))
-
-                            post.extra_files?.forEach { file ->
-                                MirrorFile(threadUpdated, filesRoot, file.tim, file.filename, file.ext)
-                            }
                         }
+                        */
                     }
                 }
             }
@@ -143,6 +148,10 @@ class InfChMirror(
         } catch(e : IOException) {
             println("    Unable to retrieve file: `$fileURL'\n$e")
         }
+    }
+
+    override fun MirrorReferences() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     fun MirrorReferences(shouldUpdate: Boolean, boardRoot: String, thread: Long, post: Long, content: String) {
@@ -186,7 +195,7 @@ class InfChMirror(
 
                     val postset = Gson().fromJson(threadFile.readText(), InfChPostSet::class.java)
                     postset.posts.forEach { post ->
-                        val postEvent = PostEvent.fromInfChPost(board, post)
+                        val postEvent = PostEvent.fromInfChPost("anonsw", board, post)
                         var include = false
 
                         // Search on trip

@@ -6,9 +6,10 @@ import utils.HTML.Companion.cleanHTMLText
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import javax.xml.bind.DatatypeConverter
 
 data class PostEvent(
-        var host : String,
+        var dataset : String,
         var board : String,
         var id : String,
         var userId : String?,
@@ -23,7 +24,8 @@ data class PostEvent(
         var threadId : String,
         var images : MutableList<PostEventImage>?,
         var postReferences: MutableList<PostEvent>,
-        private var references : MutableList<String>
+        private var references : MutableList<String>,
+        private var referenceID : String
 ) : Event() {
     data class PostEventImage(
             var url : String?,
@@ -31,9 +33,12 @@ data class PostEvent(
     )
 
     companion object {
-        fun fromInfChPost(board : String, infChPost: InfChPost) : PostEvent {
+        fun makeReferenceID(link : String) = link //DatatypeConverter.printHexBinary(MD5.digest(link.toByteArray()))
+
+        fun fromInfChPost(dataset : String, board : String, infChPost: InfChPost) : PostEvent {
+            val link = "https://8ch.net/$board/res/${infChPost.resto}.html#${infChPost.no}"
             val postEvent = PostEvent(
-                    "8ch.net",
+                    dataset,
                     board,
                     infChPost.no.toString(),
                     infChPost.id,
@@ -44,11 +49,12 @@ data class PostEvent(
                     infChPost.trip,
                     cleanHTMLText(infChPost.com),
                     infChPost.sub,
-                    "https://8ch.net/$board/res/${infChPost.resto}.html#${infChPost.no}",
+                    link,
                     infChPost.resto.toString(),
                     mutableListOf(),
                     mutableListOf(),
-                    mutableListOf()
+                    mutableListOf(),
+                    makeReferenceID(link)
             )
 
             if(infChPost.tim?.isNotEmpty() == true) {
@@ -61,9 +67,10 @@ data class PostEvent(
             return postEvent
         }
 
-        fun fromQCodeFagPost(board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
+        fun fromQCodeFagPost(dataset : String, board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
+            val link = "https://8ch.net/$board/res/${qCodeFagPost.threadId}.html#${qCodeFagPost.id}"
             val postEvent = PostEvent(
-                    "github.com",
+                    dataset,
                     board,
                     qCodeFagPost.id,
                     qCodeFagPost.userId,
@@ -74,12 +81,12 @@ data class PostEvent(
                     qCodeFagPost.trip,
                     qCodeFagPost.text,
                     qCodeFagPost.subject,
-                    qCodeFagPost.link, // https://github.com/QCodefag/QCodefag.github.io/tree/master/data
-                    //"https://8ch.net/$board/res/${qCodeFagPost.resto}.html#${qCodeFagPost.no}",
+                    link,
                     qCodeFagPost.threadId?:"",
                     mutableListOf(),
                     mutableListOf(),
-                    mutableListOf()
+                    mutableListOf(),
+                    makeReferenceID(link)
             )
 
             if(qCodeFagPost.images?.isNotEmpty() == true) {
@@ -93,12 +100,20 @@ data class PostEvent(
 
     }
 
-    init {
+    override fun FindReferences() {
         references.addAll(postReferences.map { it.ReferenceID() })
-        // TODO: detect other references
+
+        // Find post references
+        if(!text.isNullOrEmpty()) {
+            Regex(""".*>>(\d+).*""").findAll(text ?: "").forEach {
+                if(!references.contains(it.groupValues[1])) {
+                    references.add(it.groupValues[1])
+                }
+            }
+        }
     }
 
-    override fun Host(): String = host
+    override fun Dataset(): String = dataset
 
     override fun Type(): String = "Post"
 
@@ -110,7 +125,7 @@ data class PostEvent(
 
     override fun Link(): String = link
 
-    override fun ReferenceID(): String = "$host-$board-$id"
+    override fun ReferenceID(): String = referenceID
 
     override fun References(): List<String> = references
 

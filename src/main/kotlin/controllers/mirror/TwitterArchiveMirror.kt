@@ -19,7 +19,7 @@ class TwitterArchiveMirror(
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
 ) : Mirror(outputDirectory) {
 
-    fun Mirror() {
+    override fun Mirror() {
         val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
         if (MakeDirectory(mirrorRoot)) {
             val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
@@ -61,6 +61,10 @@ class TwitterArchiveMirror(
         }
     }
 
+    override fun MirrorReferences() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     fun MirrorReferences(root : String, id : String, text : String) {
         // TODO:
         //   * Detect/fix broken links
@@ -85,7 +89,7 @@ class TwitterArchiveMirror(
 
             val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
             tweets.forEach { tweet ->
-                val tweetEvent = TweetEvent.fromTwitterArchiveTweet(board, tweet)
+                val tweetEvent = TweetEvent.fromTwitterArchiveTweet("trumptwitterarchive", board, tweet)
                 if (tweetEvent.Timestamp().toInstant().isAfter(startTime.toInstant()) &&
                         tweetEvent.Timestamp().toInstant().isBefore(stopTime.toInstant())) {
                     var include = true

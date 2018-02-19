@@ -13,7 +13,7 @@ class TwitterMirror(
 ) : Mirror(outputDirectory) {
     val baseURL = "https://twitter.com"
 
-    fun Mirror() {
+    override fun Mirror() {
         val mirrorRoot = outputDirectory + File.separator + "twitter"
         if (MakeDirectory(mirrorRoot)) {
             val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
@@ -26,6 +26,10 @@ class TwitterMirror(
                 return
             }
         }
+    }
+
+    override fun MirrorReferences() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {

@@ -6,8 +6,8 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class NewsEvent(
+        var dataset : String,
         var id: String,
-        var host : String,
         var url: String,
         var date : Long,
         var headline : String?,
@@ -15,7 +15,7 @@ class NewsEvent(
         var imageUrl : String,
         private var references : MutableList<String>
 ) : Event() {
-    override fun Host(): String = host
+    override fun Dataset(): String = dataset
 
     override fun ID(): String = id
 
@@ -29,9 +29,12 @@ class NewsEvent(
 
     override fun Link(): String = url
 
-    override fun ReferenceID(): String = "$host-$url-$id"
-
+    override fun ReferenceID(): String = url
     override fun References(): List<String> = references
+
+    override fun FindReferences() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     override fun Text(): String = headline?:url?:""
 

@@ -34,7 +34,7 @@ class QTMirror(
 //        TwitterArchiveMirror(outputDirectory, "vp").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "repmikepompeo").Mirror()
 //        TwitterArchiveMirror(outputDirectory, "seanhannity").Mirror()
-        InfChMirror(outputDirectory, "greatawakening").Mirror()
+//        InfChMirror(outputDirectory, "greatawakening").Mirror()
         InfChMirror(outputDirectory, "qresearch").Mirror()
         InfChMirror(outputDirectory, "thestorm").Mirror()
         InfChMirror(outputDirectory, "cbts").Mirror()

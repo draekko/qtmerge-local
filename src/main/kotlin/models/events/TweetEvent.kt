@@ -6,7 +6,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 data class TweetEvent(
-        val host : String,
+        val dataset : String,
         val board : String,
         val id_str : String,
         val text : String?,
@@ -20,9 +20,9 @@ data class TweetEvent(
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
 
-        fun fromTwitterArchiveTweet(board : String, tweet: TwitterArchiveTweet) : TweetEvent {
+        fun fromTwitterArchiveTweet(dataset : String, board : String, tweet: TwitterArchiveTweet) : TweetEvent {
             val tweetEvent = TweetEvent(
-                "twitterarchive.com",
+                dataset,
                 board,
                 tweet.id_str,
                 tweet.text,
@@ -38,11 +38,7 @@ data class TweetEvent(
         }
     }
 
-    init {
-        // TODO: detect references
-    }
-
-    override fun Host(): String = host
+    override fun Dataset(): String = dataset
 
     override fun Type(): String = "Tweet"
 
@@ -56,9 +52,13 @@ data class TweetEvent(
         return "http://twitter.com/$board/status/$id_str"
     }
 
-    override fun ReferenceID(): String = "$host-$board-$id_str"
+    override fun ReferenceID(): String = Link()
 
     override fun References(): List<String> = references
+
+    override fun FindReferences() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     override fun RawTimestamp(): String {
         return created_at
