@@ -68,7 +68,6 @@ data class PostEvent(
         }
 
         fun fromQCodeFagPost(dataset : String, board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
-            val link = "https://8ch.net/$board/res/${qCodeFagPost.threadId}.html#${qCodeFagPost.id}"
             val postEvent = PostEvent(
                     dataset,
                     board,
@@ -81,12 +80,12 @@ data class PostEvent(
                     qCodeFagPost.trip,
                     qCodeFagPost.text,
                     qCodeFagPost.subject,
-                    link,
+                    qCodeFagPost.link,
                     qCodeFagPost.threadId?:"",
                     mutableListOf(),
                     mutableListOf(),
                     mutableListOf(),
-                    makeReferenceID(link)
+                    makeReferenceID(qCodeFagPost.link)
             )
 
             if(qCodeFagPost.images?.isNotEmpty() == true) {
