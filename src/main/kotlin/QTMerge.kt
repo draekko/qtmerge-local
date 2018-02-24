@@ -3,8 +3,10 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import controllers.importer.QCodeFagImporter
 import controllers.mirror.InfChMirror
+import controllers.mirror.TheStoryOfQMirror
 import controllers.mirror.TwitterArchiveMirror
 import models.events.Event
+import models.q.Abbreviations
 import utils.HTML.Companion.escapeHTML
 import java.io.File
 import java.time.ZoneId
@@ -14,12 +16,12 @@ import java.time.temporal.ChronoUnit
 
 // TODO: Switch to Kotson?
 
-val VERSION = "2018.2-4"
+val VERSION = "2018.2-6"
 val DATADIR = System.getProperty("user.dir") + File.separator + "data"
 val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
 val RESULTDIR = System.getProperty("user.dir") + "/anonsw.github.io/qtmerge"
 val QTRIPS = listOf("!UW.yye1fxo", "!ITPb.qbhqo" )
-val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZoneId.of("US/Eastern"))
+val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZoneId.of("US/Eastern"))
 
 fun main(args: Array<String>) {
     QTMerge()
@@ -80,11 +82,11 @@ class QTMerge(
         //events.addAll(QCodeFagImporter("$DATADIR/QCodefag.github.io/data").ImportNews("news.json"))
 
         val inputDirectory = MIRRORDIR + File.separator + mirrorLabel
-        events.addAll(TwitterArchiveMirror(inputDirectory, "realdonaldtrump", STARTTIME).MirrorSearch())
+        events.addAll(TwitterArchiveMirror(inputDirectory, "realDonaldTrump", STARTTIME).MirrorSearch())
         events.addAll(InfChMirror(inputDirectory, "greatawakening", STARTTIME).MirrorSearch(trips = QTRIPS))
-        events.addAll(InfChMirror(inputDirectory, "qresearch", STARTTIME).MirrorSearch(trips = QTRIPS))
+        events.addAll(InfChMirror(inputDirectory, "qresearch", STARTTIME).MirrorSearch(trips = QTRIPS, ids = listOf("476325", "476806")))
 
-        // Capture qanonmap's data around the greatawakening reset
+        // Capture qanonmap's data
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
                 .forEach { post ->
@@ -92,6 +94,15 @@ class QTMerge(
                         events.add(post)
                     }
                 }
+
+        // Capture thestoryofq's data
+        /*
+        TheStoryOfQMirror(inputDirectory, "qresearch", STARTTIME).MirrorSearch(trips = QTRIPS).forEach {post ->
+            if(events.find { it.Link() == post.Link() } == null) {
+                events.add(post)
+            }
+        }
+        */
 
         events.sortBy { it.Timestamp().toEpochSecond() }
 
@@ -134,7 +145,7 @@ class QTMerge(
             |<html lang="en">
             |   <head>
             |       <meta charset="utf-8">
-            |       <title>qtmerge</title>
+            |       <title>qtmerge v$VERSION</title>
             |       <link rel="stylesheet" href="../styles/reset.css">
             |       <link rel="stylesheet" href="../styles/screen.css">
             |       <link rel="stylesheet" href="qtmerge.css">
@@ -142,6 +153,8 @@ class QTMerge(
             |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
             |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
             |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
+            |       <script type="text/javascript" src="../scripts/jquery.highlight-5.js"></script>
+            |       <script type="text/javascript" src="../scripts/underscore-min.js"></script>
             |       <script type="text/javascript" src="../scripts/moment.min.js"></script>
             |       <script type="text/javascript" src="../scripts/moment-timezone-with-data-2012-2022.js"></script>
             |       <!--
@@ -153,7 +166,7 @@ class QTMerge(
             |   <div id="header">
             |   <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZoneId.of("US/Eastern")).format(formatter)}</p>
             |   <p class="downloads">
-            |       Data Sets:
+            |       Datasets:
             |       <a href="http://qanonposts.com/">qcodefag</a> | <a href="http://qanonmap.github.io/">qanonmap</a> |
             |       <a href="http://anonsw.github.io/">anonsw</a> |
             |       <a href="http://trumptwitterarchive.com/">trumptwitterarchive</a> ||
@@ -164,21 +177,29 @@ class QTMerge(
 
         out.append("""<table>
             |   <tr>
-            |       <th>Time</th>
-            |       <th>Trip (ID) [Board]</th>
+            |       <th>Time (Count)<br>[ID]</th>
+            |       <th>Trip (Board)<br>[Dataset]</th>
             |       <th>Link</th>
             |       <th>Text</th>
             |   </tr>
             |""".trimMargin())
 
         val ref = Regex(""">>(\d+)""")
-        events.reversed().forEach {
-            out.appendln("  <tr class=\"event\" id=\"${it.UID}\" data-timestamp='${MakeJSONTimestamp(it.Timestamp())}'>")
-            out.appendln("      <td class=\"e-timestamp\">${it.Timestamp().format(formatter)}</td>")
-            out.appendln("      <td class=\"e-trip\">${it.Trip()}<br><span class=\"id\">(${it.ID()})</span>${if(it.Board().isNotEmpty()) "<br><span class=\"board\">[${it.Board()}]</span>" else ""}<br><span class=\"dataset\">${it.Dataset()}</span></td>")
-            out.appendln("      <td class=\"e-type\"><a href=\"${it.Link()}\">${it.Type()}</a></td>")
+        var qpostCount = events.count { it.Type() == "Post" } + 1
+        var tweetCount = events.count { it.Type() == "Tweet" } + 1
+        var isQPost = false
+        events.reversed().forEachIndexed { index, event ->
+            when(event.Type()) {
+                "Post" -> { qpostCount--; isQPost = true }
+                "Tweet" -> { tweetCount--; isQPost = false }
+            }
+            var count = 0
+            out.appendln("  <tr class=\"event\" id=\"${event.UID}\" data-timestamp='${MakeJSONTimestamp(event.Timestamp())}'>")
+            out.appendln("      <td class=\"e-timestamp\">${event.Timestamp().format(formatter)}<br><span class=\"count\">(${if(isQPost) "Post #<b>$qpostCount</b>" else "Tweet #<b>$tweetCount</b>"})</span><br><span class=\"id\">[${event.ID()}]</span></td>")
+            out.appendln("      <td class=\"e-trip\">${event.Trip()}${if(event.Board().isNotEmpty()) "<br><span class=\"board\">(${event.Board()})</span>" else ""}<br><span class=\"dataset\">[${event.Dataset()}]</span></td>")
+            out.appendln("      <td class=\"e-type\"><a href=\"${event.Link()}\">${event.Type()}</a></td>")
             var images = ""
-            it.Images().forEach {
+            event.Images().forEach {
                 if (it.first != null) {
                     images = """<a href="${it.first}">"""
                 }
@@ -191,18 +212,34 @@ class QTMerge(
                     images += "</a>"
                 }
             }
-            if(images.isNotEmpty() && it.Text().isNotEmpty()) {
+            if(images.isNotEmpty() && event.Text().isNotEmpty()) {
                 images += "<br>"
             }
-            var text = it.Text() //escapeHTML(it.Text())
-            var refurl = it.Link().replaceAfter("#", "")
+            var text = event.Text() //escapeHTML(event.Text())
+            var refurl = event.Link().replaceAfter("#", "")
             if(!refurl.endsWith("#")) {
                 refurl += "#"
             }
             text = text.replace(ref, { match ->
                 "<a href=\"$refurl${match.groups[1]!!.value}\">${match.value}</a>"
             })
-            // TODO: add spans for markers and known acronyms
+            val boxRegex = Regex("""\[([^\]]+)\]""")
+            text = text.replace(boxRegex, { matchResult ->
+                "[<span class=\"boxed\">${matchResult.groupValues[1]}</span>]"
+            })
+            val capsRegex = Regex("""\b((?<!@)[A-Z]{2,})+\b""")
+            text = text.replace(capsRegex, { matchResult ->
+                //if(Abbreviations.dict.containsKey(matchResult.groupValues[1])) {
+                  //  matchResult.groupValues[1]
+                //} else {
+                    "<span class=\"caps\">${matchResult.groupValues[1]}</span>"
+                //}
+            })
+            val abbrRegex = Regex("""\b(${Abbreviations.dict.keys.joinToString("|")})\b""")
+            text = text.replace(abbrRegex, { matchResult ->
+                "<span class=\"abbr\" title=\"${Abbreviations.dict[matchResult.groupValues[1]]}\">${matchResult.groupValues[1]}</span>"
+            })
+            // TODO: known acronyms
             out.appendln("        <td class=\"e-text\">$images$text</td>")
             out.appendln("    </tr>")
         }
@@ -221,8 +258,8 @@ class QTMerge(
             |<table id="scratchTable">
             |   <tr>
             |       <th>#</th>
-            |       <th>Time</th>
-            |       <th>Trip (ID) [Board]</th>
+            |       <th>Time (Count)<br>[ID]</th>
+            |       <th>Trip (Board)<br>[Dataset]</th>
             |       <th>Link</th>
             |       <th>Text</th>
             |   </tr>

@@ -13,6 +13,8 @@ import java.time.Instant
 
 
 abstract class Mirror(
+    val type : String,
+    val board : String,
     val outputDirectory : String
 ) {
     enum class ReferenceDepth {
@@ -24,6 +26,7 @@ abstract class Mirror(
     abstract fun MirrorReferences()
     abstract fun MirrorSearch(
             trips : List<String> = listOf(),
+            ids : List<String> = listOf(),
             content : Regex? = null,
             referenceDepth : ReferenceDepth = ReferenceDepth.None
     ) : List<Event>
@@ -53,5 +56,9 @@ abstract class Mirror(
         val dateTime = connection.lastModified
         connection.disconnect()
         return ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTime), ZONEID)
+    }
+
+    override fun toString(): String {
+        return "$type $board"
     }
 }

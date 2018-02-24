@@ -14,10 +14,10 @@ import java.time.ZonedDateTime
 
 class TwitterArchiveMirror(
         outputDirectory : String,
-        val board : String,
+        board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror(outputDirectory) {
+) : Mirror("TwitterArchive", board, outputDirectory) {
 
     override fun Mirror() {
         val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
@@ -33,7 +33,6 @@ class TwitterArchiveMirror(
                 return
             }
 
-            println(">> board: $board")
             years.forEachIndexed { index, year ->
                 println(">> thread: $year: ${index + 1} / ${years.count()} (% ${Math.round(index.toFloat()/years.count()*100)})")
                 val tweetURL = URL("http://trumptwitterarchive.com/data/${board.toLowerCase()}/$year.json")
@@ -42,6 +41,7 @@ class TwitterArchiveMirror(
                 // Update activity json if necessary
                 var shouldUpdate = false
                 try {
+                    // TODO: find out why this iterates even when there are no new tweets
                     if (tweetFile.iterate(tweetURL.readBytesDelayed())) {
                         println("  Updated tweets for $board")
                         shouldUpdate = true
@@ -62,7 +62,8 @@ class TwitterArchiveMirror(
     }
 
     override fun MirrorReferences() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        println(">> board: $board")
+        // TODO: implement
     }
 
     fun MirrorReferences(root : String, id : String, text : String) {
@@ -77,7 +78,7 @@ class TwitterArchiveMirror(
         //
     }
 
-    override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+    override fun MirrorSearch(trips: List<String>, ids: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()

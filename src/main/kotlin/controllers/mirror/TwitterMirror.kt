@@ -7,10 +7,10 @@ import java.time.ZonedDateTime
 
 class TwitterMirror(
         outputDirectory : String,
-        val board : String,
+        board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror(outputDirectory) {
+) : Mirror("twitter", board, outputDirectory) {
     val baseURL = "https://twitter.com"
 
     override fun Mirror() {
@@ -29,10 +29,11 @@ class TwitterMirror(
     }
 
     override fun MirrorReferences() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // TODO
     }
 
-    override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun MirrorSearch(trips: List<String>, ids: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+        // TODO
+        return emptyList()
     }
 }

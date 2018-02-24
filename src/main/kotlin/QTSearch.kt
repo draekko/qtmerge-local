@@ -23,6 +23,7 @@ class QTSearch(
         val DATADIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZoneId.of("US/Eastern"))
         val DATEFORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
+        val QTRIPS = listOf("!UW.yye1fxo", "!ITPb.qbhqo" )
     }
 
     fun Search(
@@ -35,10 +36,12 @@ class QTSearch(
             //    detect and merge reposts
             //    report type (plain text, csv, graphviz)
     ) {
+        val regex = Regex(""".*[\s+.*].*""", RegexOption.IGNORE_CASE)
         println("Loading events...")
         // Load events that match search criteria and options
         val events : MutableList<Event> = arrayListOf()
-        events.addAll(InfChMirror(inputDirectory, "qresearch").MirrorSearch(content = Regex(""".*anonsw.*"""), referenceDepth = Mirror.ReferenceDepth.Shallow))
+        events.addAll(InfChMirror(inputDirectory, "greatawakening").MirrorSearch(trips = QTRIPS, content = regex, referenceDepth = Mirror.ReferenceDepth.Shallow))
+        events.addAll(InfChMirror(inputDirectory, "qresearch").MirrorSearch(trips = QTRIPS, content = regex, referenceDepth = Mirror.ReferenceDepth.Shallow))
         println("Loaded ${events.size} events.")
 
         println("Finding references...")

@@ -94,6 +94,9 @@ data class PostEvent(
                 }
             }
 
+            // Fix extra slashes in link
+            postEvent.link = postEvent.link.replace(Regex("""(?<!https?:)/+"""), "/")
+
             return postEvent
         }
 
@@ -120,7 +123,7 @@ data class PostEvent(
 
     override fun Board(): String = board
 
-    override fun Trip(): String = trip?:"<anon>"
+    override fun Trip(): String = if(trip.isNullOrEmpty()) "Anonymous" else trip?:""
 
     override fun Link(): String = link
 

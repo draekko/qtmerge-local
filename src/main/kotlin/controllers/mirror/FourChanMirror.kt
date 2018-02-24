@@ -13,10 +13,10 @@ import java.time.ZonedDateTime
 
 class FourChanMirror(
         outputDirectory : String,
-        val board : String,
+        board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror(outputDirectory) {
+) : Mirror("4chan", board, outputDirectory) {
     val baseURL = "https://archive.4plebs.org"
 
     override fun Mirror() {
@@ -35,7 +35,6 @@ class FourChanMirror(
             val activityURL = URL("http://archive.4plebs.org/_/api/chan/statistics/?board=$board&stat=activity")
             val activityFile = File(boardRoot + File.separator + "activity.json")
 
-            println(">> board: $board")
             // Update activity json if necessary
             try {
                 if (activityFile.iterate(activityURL.readBytesDelayed())) {
@@ -54,10 +53,11 @@ class FourChanMirror(
     }
 
     override fun MirrorReferences() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // TODO
     }
 
-    override fun MirrorSearch(trips: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun MirrorSearch(trips: List<String>, ids: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+        // TODO
+        return emptyList()
     }
 }

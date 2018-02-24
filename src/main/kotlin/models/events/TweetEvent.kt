@@ -15,6 +15,7 @@ data class TweetEvent(
         val in_reply_to_user_id_str : String?,
         val favorite_count : Long,
         val is_retweet : Boolean,
+        val retweet_board: String,
         private val references : MutableList<String>
 ) : Event() {
     companion object {
@@ -31,6 +32,7 @@ data class TweetEvent(
                 tweet.in_reply_to_user_id_str,
                 tweet.favorite_count,
                 tweet.is_retweet,
+                if(tweet.is_retweet) tweet.text.substring(4, tweet.text.indexOf(':')) else "",
                 mutableListOf()
             )
 
@@ -46,7 +48,7 @@ data class TweetEvent(
 
     override fun Board(): String = board
 
-    override fun Trip(): String = board
+    override fun Trip(): String = if(is_retweet) retweet_board else board
 
     override fun Link(): String {
         return "http://twitter.com/$board/status/$id_str"
