@@ -36,7 +36,8 @@ data class PostEvent(
         fun makeReferenceID(link : String) = link //DatatypeConverter.printHexBinary(MD5.digest(link.toByteArray()))
 
         fun fromInfChPost(dataset : String, board : String, infChPost: InfChPost) : PostEvent {
-            val link = "https://8ch.net/$board/res/${infChPost.resto}.html#${infChPost.no}"
+            val threadId = if(infChPost.resto == 0L) infChPost.no else infChPost.resto
+            val link = "https://8ch.net/$board/res/$threadId.html#${infChPost.no}"
             val postEvent = PostEvent(
                     dataset,
                     board,

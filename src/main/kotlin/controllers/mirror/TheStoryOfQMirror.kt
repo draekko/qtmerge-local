@@ -54,11 +54,24 @@ class TheStoryOfQMirror(
         // TODO
     }
 
-    override fun MirrorSearch(trips: List<String>, ids: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+    override fun MirrorSearch(params:SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "thestoryofq"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
         val catalogFile = File(boardRoot + File.separator + "$board.json")
+
+        // Set trips/ids if onlyQT flag set
+        if(params.onlyQT) {
+            params.trips.clear()
+            params.trips.addAll(InfChMirror.QTRIPS)
+
+            params.ids.clear()
+            if(InfChMirror.EXCEPTIONS.containsKey(board)) {
+                if(InfChMirror.EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
+                    params.ids.addAll(InfChMirror.EXCEPTIONS[board]!!.qanonPosts)
+                }
+            }
+        }
 
         println(">> board: $board")
         val posts = Gson().fromJson(catalogFile.readText(), Array<QCodeFagPost>::class.java)
@@ -67,14 +80,14 @@ class TheStoryOfQMirror(
             var include = false
 
             // Search on trip
-            if(trips.isNotEmpty() && trips.contains(post.trip)) {
+            if(params.trips.isNotEmpty() && params.trips.contains(post.trip)) {
                 include = true
             }
 
             // Search on content
             if(!include) {
-                if (content != null) {
-                    val results = content.find(postEvent.Text())
+                if (params.content != null) {
+                    val results = params.content.find(postEvent.Text())
                     if (results != null) {
                         include = true
                     }

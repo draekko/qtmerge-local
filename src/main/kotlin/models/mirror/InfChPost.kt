@@ -44,5 +44,5 @@ data class InfChPost(
         var spoiler : Int,
         var md5 : String,
         var extra_files : Array<InfChPostExtraFile>?,
-        var resto : Int
+        var resto : Long
 )

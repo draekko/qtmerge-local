@@ -13,11 +13,11 @@ import models.mirror.InfChThreadPage
 import utils.HTML.Companion.cleanHTMLText
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.FilenameFilter
 import java.io.IOException
 import java.net.URL
 import java.net.URLEncoder
 import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class InfChMirror(
@@ -31,6 +31,36 @@ class InfChMirror(
     var mirrorRoot = outputDirectory + File.separator + "8ch"
     var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
     var filesRoot = mirrorRoot + File.separator + "files"
+
+    class BoardExceptions(
+        val orphanThreads : List<InfChThread> = emptyList(),
+        val qanonPosts : List<String> = emptyList(),
+        val qstopTimes : MutableMap<String, ZonedDateTime> = mutableMapOf(),
+        val nonqPosts : List<String> = emptyList()
+    )
+
+    companion object {
+        val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
+        val QTRIPS = listOf( "!UW.yye1fxo", "!ITPb.qbhqo" )
+        val EXCEPTIONS = mutableMapOf(
+            Pair("qresearch", BoardExceptions(qanonPosts = listOf("476325", "476806"))),
+            Pair("cbts", BoardExceptions(
+                    orphanThreads = listOf(
+                            InfChThread(126564, time = 1513718366, last_modified = 1513725863)
+                            //404 InfChThread(139594, time = 1513718366, last_modified = 1513725863)
+                    ),
+                    qstopTimes = mutableMapOf(
+                            Pair("!ITPb.qbhqo", ZonedDateTime.of(2017, 12, 25, 15, 57, 38, 0, ZONEID)),
+                            Pair("!UW.yye1fxo", ZonedDateTime.of(2018, 1, 6, 0, 14, 43, 0, ZONEID))
+                    )
+            )),
+            Pair("thestorm", BoardExceptions(
+                    qstopTimes = mutableMapOf(
+                            Pair("!ITPb.qbhqo", ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID)) // Never posted on thestorm with that trip code
+                    )
+            ))
+        )
+    }
 
     override fun Mirror() {
         updatedThreads.clear()
@@ -60,6 +90,11 @@ class InfChMirror(
             catalog.forEach { page ->
                 page.threads.forEach { thread ->
                     threads.add(thread)
+                }
+            }
+            if(EXCEPTIONS.containsKey(board)) {
+                if(EXCEPTIONS[board]!!.orphanThreads.isNotEmpty()) {
+                    threads.addAll(EXCEPTIONS[board]!!.orphanThreads)
                 }
             }
             threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
@@ -173,13 +208,26 @@ class InfChMirror(
         //
     }
 
-    override fun MirrorSearch(trips : List<String>, ids : List<String>, content : Regex?, referenceDepth: ReferenceDepth) : List<Event> {
+    override fun MirrorSearch(params : SearchParameters) : List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "8ch"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
         val threads = mutableListOf<InfChThread>()
 
         println(">> board: $board")
+
+        // Set trips/ids if onlyQT flag set
+        if(params.onlyQT) {
+            params.trips.clear()
+            params.trips.addAll(QTRIPS)
+
+            params.ids.clear()
+            if(EXCEPTIONS.containsKey(board)) {
+                if(EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
+                    params.ids.addAll(EXCEPTIONS[board]!!.qanonPosts)
+                }
+            }
+        }
 
         // Gather threads from catalogs
         File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
@@ -214,18 +262,34 @@ class InfChMirror(
                                 var include = false
 
                                 // Search on trip
-                                if(!include && trips.isNotEmpty()) {
-                                    include = trips.contains(post.trip)
+                                if(!include && params.trips.isNotEmpty()) {
+                                    include = params.trips.contains(post.trip)
                                 }
 
                                 // Search on post id
-                                if(!include && ids.isNotEmpty()) {
-                                    include = ids.contains(postEvent.id)
+                                if(!include && params.ids.isNotEmpty()) {
+                                    include = params.ids.contains(postEvent.id)
+                                }
+
+                                // Handle exceptions
+                                if(include && params.onlyQT) {
+                                    if(EXCEPTIONS.containsKey(board)) {
+                                        if(EXCEPTIONS[board]!!.nonqPosts.isNotEmpty()) {
+                                            if(EXCEPTIONS[board]!!.nonqPosts.contains(postEvent.id)) {
+                                                include = false
+                                            }
+                                        }
+                                        if(EXCEPTIONS[board]!!.qstopTimes.containsKey(postEvent.trip)) {
+                                            if(Instant.ofEpochSecond(postEvent.timestamp).isAfter(EXCEPTIONS[board]!!.qstopTimes[postEvent.trip]!!.toInstant())) {
+                                                include = false
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // Search on content
-                                if(!include && (content != null)) {
-                                    include = (content.find(postEvent.Text()) != null)
+                                if(!include && (params.content != null)) {
+                                    include = (params.content.find(postEvent.Text()) != null)
                                 }
 
                                 // Finally, add to event list if it isn't already there
@@ -241,4 +305,16 @@ class InfChMirror(
 
         return eventList
     }
+
+    /*
+    override fun MirrorSearchQT(content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+        var ids = emptyList<String>()
+        if(EXCEPTIONS.containsKey(board)) {
+            if(EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
+                ids = EXCEPTIONS[board]!!.qanonPosts
+            }
+        }
+        return MirrorSearch(QTRIPS, ids, content, referenceDepth)
+    }
+    */
 }

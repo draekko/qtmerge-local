@@ -19,8 +19,8 @@ class QCodeFagMirror(
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
 ) : Mirror("qcodefag", board, outputDirectory) {
-    var threads: MutableList<InfChThread> = arrayListOf()
-    val updatedThreads: MutableList<InfChThread> = arrayListOf()
+    var threads: MutableList<InfChThread> = mutableListOf()
+    val updatedThreads: MutableList<InfChThread> = mutableListOf()
     var mirrorRoot = outputDirectory + File.separator + "qcodefag"
     var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
     var filesRoot = mirrorRoot + File.separator + "files"
@@ -56,11 +56,24 @@ class QCodeFagMirror(
         // TODO
     }
 
-    override fun MirrorSearch(trips: List<String>, ids: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+    override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "qcodefag"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
         val catalogFile = File(boardRoot + File.separator + "$board.json")
+
+        // Set trips/ids if onlyQT flag set
+        if(params.onlyQT) {
+            params.trips.clear()
+            params.trips.addAll(InfChMirror.QTRIPS)
+
+            params.ids.clear()
+            if(InfChMirror.EXCEPTIONS.containsKey(board)) {
+                if(InfChMirror.EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
+                    params.ids.addAll(InfChMirror.EXCEPTIONS[board]!!.qanonPosts)
+                }
+            }
+        }
 
         println(">> board: $board")
         val posts = Gson().fromJson(catalogFile.readText(), Array<QCodeFagPost>::class.java)
@@ -69,14 +82,14 @@ class QCodeFagMirror(
             var include = false
 
             // Search on trip
-            if(trips.isNotEmpty() && trips.contains(post.trip)) {
+            if(params.trips.isNotEmpty() && params.trips.contains(post.trip)) {
                 include = true
             }
 
             // Search on content
             if(!include) {
-                if (content != null) {
-                    val results = content.find(postEvent.Text())
+                if (params.content != null) {
+                    val results = params.content.find(postEvent.Text())
                     if (results != null) {
                         include = true
                     }

@@ -18,7 +18,6 @@ class QTMonitor(
         val DATADIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.now(ZoneId.of("US/Eastern")).minusHours(24)
         val DATEFORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-        val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
     }
 
     fun Monitor() {
@@ -29,14 +28,40 @@ class QTMonitor(
         )
 
         while(true) {
+            // Count QT events before
+            println("\nCounting QT Events")
+            var precount = 0
+            mirrors.forEach {
+                precount += it.MirrorSearch().count()
+            }
+            println(">> $precount events")
+
             // Mirror post data first
-            println("\nMirroring Posts")
+            println("\nMirroring Events")
             mirrors.forEach {
                 println(">> $it")
                 try {
                     it.Mirror()
                 } catch(e : Exception) {
                     println(e)
+                }
+            }
+
+            // Count QT events after
+            println("\nCounting QT Events")
+            var postcount = 0
+            mirrors.forEach {
+                postcount += it.MirrorSearch().count()
+            }
+            println(">> $postcount events")
+
+            // Run QT Merge and deploy if counts differ
+            if(precount != postcount) {
+                println("\nEvent counts differ, merging")
+                QTMerge()
+                if(File("deploy.sh").exists()) {
+                    println("\nDeploying")
+                    // TODO: run delpoy.sh
                 }
             }
 

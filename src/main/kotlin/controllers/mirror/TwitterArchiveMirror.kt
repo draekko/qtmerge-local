@@ -78,7 +78,7 @@ class TwitterArchiveMirror(
         //
     }
 
-    override fun MirrorSearch(trips: List<String>, ids: List<String>, content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
+    override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()

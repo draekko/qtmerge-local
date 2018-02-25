@@ -67,7 +67,7 @@ class QTMirror(
             InfChMirror(outputDirectory, "qresearch"),
             InfChMirror(outputDirectory, "thestorm"),
             InfChMirror(outputDirectory, "cbts"),
-            InfChMirror(outputDirectory, "pol", STARTTIME) //, ZonedDateTime.of(2018, 1, 5, 0, 0, 0, 0, ZONEID))
+            InfChMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID))
             //FourChanMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
             //TwitterMirror(outputDirectory, "JulianAssange")
             //TwitterMirror(outputDirectory, "Wikileaks")

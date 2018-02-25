@@ -22,14 +22,17 @@ abstract class Mirror(
         Shallow,
         Deep
     }
+
+    data class SearchParameters(
+        val trips : MutableList<String> = mutableListOf(),
+        val ids : MutableList<String> = mutableListOf(),
+        val content : Regex? = null,
+        val referenceDepth : ReferenceDepth = ReferenceDepth.None,
+        val onlyQT : Boolean = true
+    )
     abstract fun Mirror()
     abstract fun MirrorReferences()
-    abstract fun MirrorSearch(
-            trips : List<String> = listOf(),
-            ids : List<String> = listOf(),
-            content : Regex? = null,
-            referenceDepth : ReferenceDepth = ReferenceDepth.None
-    ) : List<Event>
+    abstract fun MirrorSearch(params : SearchParameters = SearchParameters()) : List<Event>
 
     fun MakeDirectory(path : String) : Boolean {
         var isSuccessful = true

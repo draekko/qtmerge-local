@@ -10,12 +10,14 @@ fun File.iterate(bytes : ByteArray) : Boolean {
 
     if(!exists()) {
         FileUtils.moveFile(temp, this)
+        setReadOnly()
         return true
     } else {
         if (!FileUtils.contentEquals(this, temp)) {
             val original = File(this.absolutePath)
             if (renameTo(File(absolutePath + "-" + lastModified()))) {
                 FileUtils.moveFile(temp, original)
+                original.setReadOnly()
                 return true
             } else {
                 throw IOException("Unable to rename file from $absolutePath to $absolutePath-${lastModified()}")
