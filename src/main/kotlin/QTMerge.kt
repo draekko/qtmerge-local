@@ -268,8 +268,8 @@ class QTMerge(
             |           Graphic 5: https://archive.4plebs.org/pol/thread/149080733/#149083850  1?<br>
             |           Graphic 6: https://archive.4plebs.org/pol/thread/150171127/#150171513  2?<br>
             |           Graphic 7: https://archive.4plebs.org/pol/thread/150171127/#150171863  2?<br>
-            |           Graphic 8: https://archive.4plebs.org/pol/thread/149920858/#149922836 (No new Q anonymous posts)<br>
-            |           Graphic 9: https://archive.4plebs.org/pol/thread/150166775/#150170214 (No new Q anonymous posts)<br>
+            |           Graphic: https://archive.4plebs.org/pol/thread/149920858/#149922836 (No new Q anonymous posts)<br>
+            |           Graphic: https://archive.4plebs.org/pol/thread/150166775/#150170214 (No new Q anonymous posts)<br>
             |           Confirmation: https://archive.4plebs.org/pol/thread/150171127/#150172069 "QMAP 1/2 confirmed."<br>
             |           Confirmation: https://archive.4plebs.org/pol/thread/150171127/#150172817 "1&2 confirmed."<br>
             |       </dd>
