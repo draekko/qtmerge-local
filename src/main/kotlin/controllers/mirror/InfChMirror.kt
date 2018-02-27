@@ -43,7 +43,7 @@ class InfChMirror(
         val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
         val QTRIPS = listOf( "!UW.yye1fxo", "!ITPb.qbhqo" )
         val EXCEPTIONS = mutableMapOf(
-            Pair("qresearch", BoardExceptions(qanonPosts = listOf("476325", "476806"))),
+            Pair("qresearch", BoardExceptions(qanonPosts = listOf("476325", "476806", "508699"))),
             Pair("cbts", BoardExceptions(
                     orphanThreads = listOf(
                             InfChThread(126564, time = 1513718366, last_modified = 1513725863)

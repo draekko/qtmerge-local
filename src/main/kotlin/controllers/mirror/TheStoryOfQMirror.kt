@@ -35,7 +35,7 @@ class TheStoryOfQMirror(
                 return
             }
 
-            val catalogURL = URL("http://www.thestoryofq.com/data/$board.json")
+            val catalogURL = URL("http://www.thestoryofq.com/data/json/$board.json")
             val catalogFile = File(boardRoot + File.separator + "$board.json")
 
             // Update catalog json if necessary

@@ -87,7 +87,7 @@ class Abbreviations {
 			Pair("HS", "Homeland Security"),
 			Pair("HA", "Huma Abedin"),
             Pair("Huma", "Huma Abedin"),
-			Pair("HUMA", "Harvard University Muslim Alumni"),
+			Pair("HUMA", "Huma Abedin or Harvard University Muslim Alumni"),
 			Pair("H-wood", "Hollywood"),
 			Pair("IC", "Intelligence Community"),
 			Pair("ID", "Identification"),

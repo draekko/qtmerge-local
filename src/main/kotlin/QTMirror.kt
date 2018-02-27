@@ -33,14 +33,14 @@ class QTMirror(
                 */
 
             TwitterArchiveMirror(outputDirectory, "realDonaldTrump"),
-            //TwitterArchiveMirror(outputDirectory, "hillaryclinton")
-            //TwitterArchiveMirror(outputDirectory, "senatorsessions")
-            //TwitterArchiveMirror(outputDirectory, "POTUS")
-            //TwitterArchiveMirror(outputDirectory, "genflynn")
-            //TwitterArchiveMirror(outputDirectory, "govpencein")
-            //TwitterArchiveMirror(outputDirectory, "vp")
-            //TwitterArchiveMirror(outputDirectory, "repmikepompeo")
-            //TwitterArchiveMirror(outputDirectory, "seanhannity")
+            TwitterArchiveMirror(outputDirectory, "hillaryclinton"),
+            TwitterArchiveMirror(outputDirectory, "senatorsessions"),
+            TwitterArchiveMirror(outputDirectory, "POTUS"),
+            TwitterArchiveMirror(outputDirectory, "genflynn"),
+            TwitterArchiveMirror(outputDirectory, "govpencein"),
+            TwitterArchiveMirror(outputDirectory, "vp"),
+            TwitterArchiveMirror(outputDirectory, "repmikepompeo"),
+            TwitterArchiveMirror(outputDirectory, "seanhannity"),
             QCodeFagMirror(outputDirectory, "cbtsNonTrip8chanPosts"),
             QCodeFagMirror(outputDirectory, "cbtsTrip8chanPosts"),
             QCodeFagMirror(outputDirectory, "greatawakeningTrip8chanPosts"),
@@ -65,8 +65,9 @@ class QTMirror(
             TheStoryOfQMirror(outputDirectory, "thestormTrip8chanPosts"),
             InfChMirror(outputDirectory, "greatawakening"),
             InfChMirror(outputDirectory, "qresearch"),
-            InfChMirror(outputDirectory, "thestorm"),
-            InfChMirror(outputDirectory, "cbts"),
+            InfChMirror(outputDirectory, "qr4a"),
+            InfChMirror(outputDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+            InfChMirror(outputDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
             InfChMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID))
             //FourChanMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
             //TwitterMirror(outputDirectory, "JulianAssange")

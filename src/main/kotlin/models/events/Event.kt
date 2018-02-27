@@ -5,8 +5,7 @@ import java.time.ZonedDateTime
 import javax.xml.bind.DatatypeConverter
 
 abstract class Event(
-        @Transient var UID : String = "",
-        @Transient var Deltas : MutableList<Event> = arrayListOf()
+        @Transient var UID : String = ""
 ) {
     companion object {
         @Transient val MD5: MessageDigest = MessageDigest.getInstance("MD5")
