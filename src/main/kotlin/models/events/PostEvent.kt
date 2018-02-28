@@ -9,7 +9,7 @@ import java.time.ZonedDateTime
 import javax.xml.bind.DatatypeConverter
 
 data class PostEvent(
-        var dataset : String,
+        var datasets : MutableList<String>,
         var board : String,
         var id : String,
         var userId : String?,
@@ -40,7 +40,7 @@ data class PostEvent(
             val threadId = if(infChPost.resto == 0L) infChPost.no else infChPost.resto
             val link = "https://8ch.net/$board/res/$threadId.html#${infChPost.no}"
             val postEvent = PostEvent(
-                    dataset,
+                    mutableListOf(dataset),
                     board,
                     infChPost.no.toString(),
                     infChPost.id,
@@ -218,7 +218,7 @@ data class PostEvent(
                 qmapRefs.addAll(graphicPostIds[qCodeFagPost.source]!!.find { it.first == qCodeFagPost.id }!!.second)
             }
             val postEvent = PostEvent(
-                    dataset,
+                    mutableListOf(dataset),
                     board,
                     qCodeFagPost.id,
                     qCodeFagPost.userId,
@@ -265,7 +265,7 @@ data class PostEvent(
         }
     }
 
-    override fun Dataset(): String = dataset
+    override fun Datasets(): List<String> = datasets
 
     override fun Type(): String = "Post"
 

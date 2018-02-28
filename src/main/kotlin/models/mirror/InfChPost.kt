@@ -1,19 +1,5 @@
 package models.mirror
 
-data class InfChPostExtraFile(
-    var tn_h : Int,
-    var tn_w : Int,
-    var h : Int,
-    var w : Int,
-    var fsize : Long,
-    var filename : String,
-    var ext : String,
-    var tim : String,
-    var fpath : Int,
-    var spoiler : Int,
-    var md5 : String
-)
-
 data class InfChPost(
         var no : Long,
         var title : String,
@@ -45,4 +31,18 @@ data class InfChPost(
         var md5 : String,
         var extra_files : Array<InfChPostExtraFile>?,
         var resto : Long
-)
+) {
+    data class InfChPostExtraFile(
+        var tn_h : Int,
+        var tn_w : Int,
+        var h : Int,
+        var w : Int,
+        var fsize : Long,
+        var filename : String,
+        var ext : String,
+        var tim : String,
+        var fpath : Int,
+        var spoiler : Int,
+        var md5 : String
+    )
+}

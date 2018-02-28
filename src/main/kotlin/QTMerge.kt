@@ -2,6 +2,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import controllers.importer.QCodeFagImporter
+import controllers.mirror.FourChanMirror
 import controllers.mirror.InfChMirror
 import controllers.mirror.TwitterArchiveMirror
 import models.events.Event
@@ -32,6 +33,7 @@ class QTMerge(
         val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
         val FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
+        //val ROLLBACKDAYS = 111L
     }
 
     init {
@@ -70,6 +72,7 @@ class QTMerge(
     fun LoadSources() {
         val inputDirectory = MIRRORDIR + File.separator + mirrorLabel
         events.addAll(TwitterArchiveMirror(inputDirectory, "realDonaldTrump", STARTTIME).MirrorSearch())
+        events.addAll(FourChanMirror(inputDirectory, "pol", STARTTIME).MirrorSearch())
         events.addAll(InfChMirror(inputDirectory, "pol", STARTTIME).MirrorSearch())
         events.addAll(InfChMirror(inputDirectory, "cbts", STARTTIME).MirrorSearch())
         events.addAll(InfChMirror(inputDirectory, "thestorm", STARTTIME).MirrorSearch())
@@ -80,36 +83,71 @@ class QTMerge(
         QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
                 .ImportQPosts("qcodefag", "pol", false, "4chan.org", "pol4chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
                     }
                 }
         QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
                 .ImportQPosts("qcodefag", "cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
                     }
                 }
         QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
                 .ImportQPosts("qcodefag", "cbts", true, "8ch.net", "cbtsTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
                     }
                 }
         QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
                 .ImportQPosts("qcodefag", "pol", true, "8ch.net", "polTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
                     }
                 }
         QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
                 .ImportQPosts("qcodefag", "thestorm", true, "8ch.net", "thestormTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
+                    }
+                }
+        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
+                .ImportQPosts("qcodefag", "greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
+                .forEach { post ->
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
+                        events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
+                    }
+                }
+        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
+                .ImportQPosts("qcodefag", "qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json")
+                .forEach { post ->
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
+                        events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qcodefag")
                     }
                 }
 
@@ -117,57 +155,81 @@ class QTMerge(
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "pol", false, "4chan.org", "pol4chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "cbts", true, "8ch.net", "cbtsTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "pol", true, "8ch.net", "polTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "thestorm", true, "8ch.net", "thestormTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
         QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
                 .ImportQPosts("qanonmap", "qresearch", true, "8ch.net", "qresearchNonTrip8chanPosts.json")
                 .forEach { post ->
-                    if(events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) } == null) {
+                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+                    if(event == null) {
                         events.add(post)
+                    } else {
+                        (event as PostEvent).datasets.add("qanonmap")
                     }
                 }
 
@@ -401,7 +463,7 @@ class QTMerge(
         val isQPost = event.Type() == "Post"
         val ref = Regex(""">>(\d+)""")
         var trip = event.Trip()
-        var datasets = event.Dataset()
+        var datasets = event.Datasets().joinToString(",<br>")
         var noconfclass = ""
         var confattr = " data-conf=\"true\""
         if((event.Type() == "Post") && (event.Trip() == "Anonymous")) {
@@ -415,6 +477,7 @@ class QTMerge(
             }
         }
         out.appendln("  <tr class=\"event$noconfclass\" id=\"${event.UID}\" data-timestamp='${MakeJSONTimestamp(event.Timestamp())}'$confattr>")
+        //out.appendln("      <td class=\"e-timestamp\">Past: ${event.Timestamp().format(FORMATTER)}<br>Future: ${event.Timestamp().plusDays(ROLLBACKDAYS).format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-timestamp\">${event.Timestamp().format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-trip\">$trip${if(event.Board().isNotEmpty()) "<br><span class=\"board\">(${event.Board()})</span>" else ""}<br><span class=\"datasets\">[$datasets]</span></td>")
         out.appendln("      <td class=\"e-type\"><a href=\"${event.Link()}\">${event.Type()}</a></td>")

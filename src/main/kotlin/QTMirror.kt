@@ -22,16 +22,6 @@ class QTMirror(
     init {
         val outputDirectory = DATADIR + File.separator + mirrorLabel
         val mirrors = arrayListOf(
-                /*
-            cbtsNonTrip8chanPosts.json
-            cbtsTrip8chanPosts.json
-            greatawakeningTrip8chanPosts.json
-            pol4chanPosts.json
-            polTrip8chanPosts.json
-            qresearchTrip8chanPosts.json
-            thestormTrip8chanPosts.json
-                */
-
             TwitterArchiveMirror(outputDirectory, "realDonaldTrump"),
             TwitterArchiveMirror(outputDirectory, "hillaryclinton"),
             TwitterArchiveMirror(outputDirectory, "senatorsessions"),
@@ -68,8 +58,8 @@ class QTMirror(
             InfChMirror(outputDirectory, "qr4a"),
             InfChMirror(outputDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
             InfChMirror(outputDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-            InfChMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID))
-            //FourChanMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
+            InfChMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
+            FourChanMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
             //TwitterMirror(outputDirectory, "JulianAssange")
             //TwitterMirror(outputDirectory, "Wikileaks")
             //TwitterMirror(outputDirectory, "Snowden")

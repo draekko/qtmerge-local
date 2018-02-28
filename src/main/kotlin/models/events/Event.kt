@@ -10,7 +10,7 @@ abstract class Event(
     companion object {
         @Transient val MD5: MessageDigest = MessageDigest.getInstance("MD5")
     }
-    abstract fun Dataset() : String
+    abstract fun Datasets() : List<String>
     abstract fun Type() : String
     abstract fun ID() : String
     abstract fun Board(): String

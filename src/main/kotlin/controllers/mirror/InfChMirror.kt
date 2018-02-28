@@ -305,16 +305,4 @@ class InfChMirror(
 
         return eventList
     }
-
-    /*
-    override fun MirrorSearchQT(content: Regex?, referenceDepth: ReferenceDepth): List<Event> {
-        var ids = emptyList<String>()
-        if(EXCEPTIONS.containsKey(board)) {
-            if(EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
-                ids = EXCEPTIONS[board]!!.qanonPosts
-            }
-        }
-        return MirrorSearch(QTRIPS, ids, content, referenceDepth)
-    }
-    */
 }

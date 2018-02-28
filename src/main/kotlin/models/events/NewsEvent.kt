@@ -6,7 +6,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class NewsEvent(
-        var dataset : String,
+        var datasets : MutableList<String>,
         var id: String,
         var url: String,
         var date : Long,
@@ -15,7 +15,7 @@ class NewsEvent(
         var imageUrl : String,
         private var references : MutableList<String>
 ) : Event() {
-    override fun Dataset(): String = dataset
+    override fun Datasets(): List<String> = datasets
 
     override fun ID(): String = id
 

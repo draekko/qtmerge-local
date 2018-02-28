@@ -6,7 +6,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 data class TweetEvent(
-        val dataset : String,
+        val datasets : MutableList<String>,
         val board : String,
         val id_str : String,
         val text : String?,
@@ -23,7 +23,7 @@ data class TweetEvent(
 
         fun fromTwitterArchiveTweet(dataset : String, board : String, tweet: TwitterArchiveTweet) : TweetEvent {
             val tweetEvent = TweetEvent(
-                dataset,
+                mutableListOf(dataset),
                 board,
                 tweet.id_str,
                 tweet.text,
@@ -40,7 +40,7 @@ data class TweetEvent(
         }
     }
 
-    override fun Dataset(): String = dataset
+    override fun Datasets(): List<String> = datasets
 
     override fun Type(): String = "Tweet"
 
