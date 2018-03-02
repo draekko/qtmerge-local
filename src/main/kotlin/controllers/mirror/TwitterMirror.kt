@@ -6,15 +6,16 @@ import java.time.Instant
 import java.time.ZonedDateTime
 
 class TwitterMirror(
-        outputDirectory : String,
+        mirrorDirectory : String,
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror("twitter", board, outputDirectory) {
+) : Mirror(mirrorDirectory, board, Source.Twitter, "anonsw") {
     val baseURL = "https://twitter.com"
+    val mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "twitter"
 
     override fun Mirror() {
-        val mirrorRoot = outputDirectory + File.separator + "twitter"
+        println(">> mirror: $this")
         if (MakeDirectory(mirrorRoot)) {
             val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
             val filesRoot = mirrorRoot + File.separator + "files"
@@ -29,10 +30,12 @@ class TwitterMirror(
     }
 
     override fun MirrorReferences() {
+        println(">> mirror refs: $this")
         // TODO
     }
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
+        println(">> search: $this")
         // TODO
         return emptyList()
     }

@@ -1,10 +1,7 @@
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
-import controllers.importer.QCodeFagImporter
-import controllers.mirror.FourChanMirror
-import controllers.mirror.InfChMirror
-import controllers.mirror.TwitterArchiveMirror
+import controllers.mirror.*
 import models.events.Event
 import models.events.PostEvent
 import models.q.Abbreviations
@@ -28,12 +25,11 @@ class QTMerge(
 
     companion object {
         val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.2-7"
+        val VERSION = "2018.3-1"
         val DATADIR = System.getProperty("user.dir") + File.separator + "data"
         val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
         val FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-        //val ROLLBACKDAYS = 111L
     }
 
     init {
@@ -70,168 +66,48 @@ class QTMerge(
     }
 
     fun LoadSources() {
-        val inputDirectory = MIRRORDIR + File.separator + mirrorLabel
-        events.addAll(TwitterArchiveMirror(inputDirectory, "realDonaldTrump", STARTTIME).MirrorSearch())
-        events.addAll(FourChanMirror(inputDirectory, "pol", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(inputDirectory, "pol", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(inputDirectory, "cbts", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(inputDirectory, "thestorm", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(inputDirectory, "greatawakening", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(inputDirectory, "qresearch", STARTTIME).MirrorSearch())
+        val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
+        events.addAll(TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", STARTTIME).MirrorSearch())
+        events.addAll(FourChanMirror(mirrorDirectory, "pol", STARTTIME).MirrorSearch())
+        events.addAll(InfChMirror(mirrorDirectory, "pol", STARTTIME).MirrorSearch())
+        events.addAll(InfChMirror(mirrorDirectory, "cbts", STARTTIME).MirrorSearch())
+        events.addAll(InfChMirror(mirrorDirectory, "thestorm", STARTTIME).MirrorSearch())
+        events.addAll(InfChMirror(mirrorDirectory, "greatawakening", STARTTIME).MirrorSearch())
+        events.addAll(InfChMirror(mirrorDirectory, "qresearch", STARTTIME).MirrorSearch())
 
         // Capture qcodefag's data
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "pol", false, "4chan.org", "pol4chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "cbts", true, "8ch.net", "cbtsTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "pol", true, "8ch.net", "polTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "thestorm", true, "8ch.net", "thestormTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/QCodefag.github.io/data")
-                .ImportQPosts("qcodefag", "qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qcodefag")
-                    }
-                }
+        QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
+        QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
+        QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
+        QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
+        QCodeFagMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
+        QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
+        QCodeFagMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
 
         // Capture qanonmap's data
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "pol", false, "4chan.org", "pol4chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "cbts", false, "8ch.net", "cbtsNonTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "cbts", true, "8ch.net", "cbtsTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "pol", true, "8ch.net", "polTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "thestorm", true, "8ch.net", "thestormTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "greatawakening", true, "8ch.net", "greatawakeningTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "qresearch", true, "8ch.net", "qresearchTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
-        QCodeFagImporter("$DATADIR/qanonmap.github.io/data")
-                .ImportQPosts("qanonmap", "qresearch", true, "8ch.net", "qresearchNonTrip8chanPosts.json")
-                .forEach { post ->
-                    val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-                    if(event == null) {
-                        events.add(post)
-                    } else {
-                        (event as PostEvent).datasets.add("qanonmap")
-                    }
-                }
+        QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
+        QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts", STARTTIME).MirrorSearch()
+                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
 
         events.sortBy { it.Timestamp().toEpochSecond() }
 
@@ -243,6 +119,15 @@ class QTMerge(
         println("Total Events: ${events.size}")
     }
 
+    fun MergePostEvent(post: PostEvent, dataset : String) {
+        val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
+        if(event == null) {
+            events.add(post)
+        } else {
+            (event as PostEvent).datasets.add(dataset)
+        }
+    }
+
     fun ExportJson() {
         val gson = GsonBuilder().setPrettyPrinting().create()
         File("$outputDirectory/qtmerge-pretty.json").writeText(gson.toJson(events.sortedBy { it.Timestamp().toEpochSecond() }))
@@ -250,7 +135,18 @@ class QTMerge(
     }
 
     fun ExportHtml() {
+        val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
         val dsout = File("$outputDirectory/datasets.html").outputStream().bufferedWriter()
+        val graphicrows = PostEvent.GRAPHICS.mapIndexed { index, graphic -> """
+            |<tr>
+            |   <td>${index+1}</td>
+            |   <td>${if(graphic.anon) "Anonymous" else "Tripped"}</td>
+            |   <td>${graphic.links.joinToString("<br>") { "<a href=\"$it\">${it.substringAfter("#")}</a>"}}</td>
+            |   <td>${graphic.conflinks.joinToString("<br>") { "<a href=\"$it\">${it.substringAfter("#")}</a>"}}</td>
+            |   <td style="text-align:left;">${graphic.confnotes.joinToString("<br>")}</td>
+            |   <td style="text-align:left;">${graphic.notes}</td>
+            |</tr>
+            """.trimMargin() }.joinToString("")
         dsout.append("""
             |<!doctype html>
             |<html lang="en">
@@ -288,6 +184,7 @@ class QTMerge(
             |   <p>Because the data at the raw source websites can be deleted/modified the following websites mirror or have mirrored data
             |       either in raw form or modified raw form:</p>
             |   <ul>
+            |       <li>https://archive.4plebs.org/</li>
             |       <li>https://trumptwitterarchive.com/</li>
             |       <li>https://github.com/qcodefag/ &rarr; https://qcodefag.github.io/, https://qanonposts.com/</li>
             |       <li>https://github.com/qanonmap/ &rarr; https://qanonmap.github.io/, https://thestoryofq.com/ ?</li>
@@ -301,48 +198,18 @@ class QTMerge(
             |   <p>Early posts by Q were made anonymously (without a trip code) and therefore required confirmed graphics (maps). Below is a
             |   summary of those confirmations (a work in progress):</p>
             |
+            |   <table class="confirmations">
+            |   <tr><th>#</th><th>Type</th><th>Graphics</th><th>Confirmations</th><th>Q Note</th><th>Other Notes</th></tr>
+            |   $graphicrows
+            |   </table>
             |   <dl>
-            |       <dt>Q Map 1: Anonymous confirmation (confirmed with later tripped confirmations)</dt>
-            |       <dd>
-            |           Graphic 1: https://archive.4plebs.org/pol/thread/148136485/#148136656<br>
-            |           Confirmation: Conf: https://archive.4plebs.org/pol/thread/148136485/#148139234 "Re-read complete crumb graphic (confirmed good)."
-            |       </dd>
-            |
-            |       <dt>Q Map 2: Anonymous confirmation (confirmed with later tripped confirmations)</dt>
-            |       <dd>
-            |           Graphic 2: https://archive.4plebs.org/pol/thread/148146734/#148147343<br>
-            |           Confirmation: https://archive.4plebs.org/pol/thread/148146734/#148148004 "Graphic confirmed."
-            |       </dd>
-            |
-            |       <dt>Q Map 3: Tripped confirmation</dt>
-            |       <dd>
-            |           Graphic 3 + Confirmation: https://archive.4plebs.org/pol/thread/148777785/#148779656 "Attached gr[A]phic is correct."
-            |       </dd>
-            |
-            |       <dt>Q Map 4: Tripped confirmation</dt>
-            |       <dd>
-            |           Graphic 4: https://archive.4plebs.org/pol/thread/148866159/#148872136<br>
-            |           Confirmation: https://archive.4plebs.org/pol/thread/148866159/#148872500 "Confirmed.\nCorrect."
-            |       </dd>
-            |
-            |       <dt>Q Maps 5-7: Tripped confirmations</dt>
-            |       <dd>
-            |           Graphic 5: https://archive.4plebs.org/pol/thread/149080733/#149083850  1?<br>
-            |           Graphic 6: https://archive.4plebs.org/pol/thread/150171127/#150171513  2?<br>
-            |           Graphic 7: https://archive.4plebs.org/pol/thread/150171127/#150171863  2?<br>
-            |           Graphic: https://archive.4plebs.org/pol/thread/149920858/#149922836 (No new Q anonymous posts)<br>
-            |           Graphic: https://archive.4plebs.org/pol/thread/150166775/#150170214 (No new Q anonymous posts)<br>
-            |           Confirmation: https://archive.4plebs.org/pol/thread/150171127/#150172069 "QMAP 1/2 confirmed."<br>
-            |           Confirmation: https://archive.4plebs.org/pol/thread/150171127/#150172817 "1&2 confirmed."<br>
-            |       </dd>
-            |
             |       <dt>Unconfirmed Q Map Set in recent qresearch OPs?</dt>
             |       <dd>
             |           Graphic: https://8ch.net/qresearch/res/387596.html#387700
             |       </dd>
             |   </dl>
             |
-            |   <p>Currently qtmerge relies on graphics/maps 1-7 to mark non-tripped posts as confirmed from Q.</p>
+            |   <p>Currently qtmerge relies on graphics/maps 1-${PostEvent.GRAPHICS.size} above to mark non-tripped posts as confirmed from Q.</p>
             |
             |   <h2>Anonymous Q Posts</h2>
             |
@@ -356,6 +223,7 @@ class QTMerge(
             |   </tr>
             """.trimMargin())
         val out = File("$outputDirectory/index.html").outputStream().bufferedWriter()
+        val qmaps = PostEvent.GRAPHICS.mapIndexed { index, graphic -> "<a href=\"${graphic.links.first()}\" title=\"${graphic.id}\">Q Map ${index+1}</a>" }.joinToString(" | ")
         out.append("""<!doctype html>
             |<html lang="en">
             |   <head>
@@ -381,18 +249,15 @@ class QTMerge(
             |   <div id="header">
             |       <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZONEID).format(FORMATTER)}</p>
             |       <div class="datasets">
-            |           Datasets (<a href="datasets.html">Detailed Information</a>):
+            |           <b><a href="datasets.html">Datasets</a>:</b>
+            |           <a href="https://anonsw.github.io/">anonsw</a> |
             |           <a href="https://qanonposts.com/">qcodefag</a> |
             |           <a href="https://qanonmap.github.io/">qanonmap</a> |
-            |           <a href="https://anonsw.github.io/">anonsw</a> |
-            |           <a href="https://trumptwitterarchive.com/">trumptwitterarchive</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/148136485/#148136656" title="148136656">Q Map 1</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/148146734/#148147343" title="148147343">Q Map 2</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/148777785/#148779656" title="148779656">Q Map 3</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/148866159/#148872136" title="148872136">Q Map 4</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/149080733/#149083850" title="149083850">Q Map 5</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/150171127/#150171513" title="150171513">Q Map 6</a> |
-            |           <a href="https://archive.4plebs.org/pol/thread/150171127/#150171863" title="150171863">Q Map 7</a> ||
+            |           <a href="https://trumptwitterarchive.com/">twitterarchive</a> |
+            |           $qmaps
+            |       </div>
+            |       <div class="wip">
+            |           <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Catalog</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
             |       <div class="menu">
             |           <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
@@ -400,7 +265,7 @@ class QTMerge(
             |   </div>
             |""".trimMargin())
 
-        out.append("""<table>
+        out.append("""<table id="events">
             |   <tr>
             |       <th>Time (Count)<br>[ID]</th>
             |       <th>Trip (Board)<br>[Datasets]</th>
@@ -466,18 +331,23 @@ class QTMerge(
         var datasets = event.Datasets().joinToString(",<br>")
         var noconfclass = ""
         var confattr = " data-conf=\"true\""
-        if((event.Type() == "Post") && (event.Trip() == "Anonymous")) {
-            if ((event as PostEvent).anonVerifiedAsQ.size > 0) {
-                trip += " Q"
-                datasets += ",<br>Q Map ${event.anonVerifiedAsQ.joinToString(",<br>Q Map ")}"
-            } else {
-                trip += " Q?"
-                noconfclass = " event-noconf"
-                confattr = " data-conf=\"false\""
+        if(event.Type() == "Post") {
+            if ((event as PostEvent).inGraphics.size > 0) {
+                datasets += ",<br>Q Map ${event.inGraphics.map { graphId -> PostEvent.GRAPHICS.indexOfFirst { it.id == graphId && it.source == event.source } + 1 }.joinToString(",<br>Q Map ")}"
+            }
+            if(event.Trip() == "Anonymous") {
+                if (event.inGraphics.size > 0) {
+                    trip += " Q"
+                } else {
+                    trip += " Q?"
+                    noconfclass = " event-noconf"
+                    confattr = " data-conf=\"false\""
+                }
             }
         }
+
+        // TODO: need to show subject/name/email...Q uses these in peculiar ways?
         out.appendln("  <tr class=\"event$noconfclass\" id=\"${event.UID}\" data-timestamp='${MakeJSONTimestamp(event.Timestamp())}'$confattr>")
-        //out.appendln("      <td class=\"e-timestamp\">Past: ${event.Timestamp().format(FORMATTER)}<br>Future: ${event.Timestamp().plusDays(ROLLBACKDAYS).format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-timestamp\">${event.Timestamp().format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-trip\">$trip${if(event.Board().isNotEmpty()) "<br><span class=\"board\">(${event.Board()})</span>" else ""}<br><span class=\"datasets\">[$datasets]</span></td>")
         out.appendln("      <td class=\"e-type\"><a href=\"${event.Link()}\">${event.Type()}</a></td>")

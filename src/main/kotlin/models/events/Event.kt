@@ -21,6 +21,7 @@ abstract class Event(
     abstract fun References() : List<String>
     abstract fun Timestamp() : ZonedDateTime
     abstract fun RawTimestamp() : String
+    abstract fun Subject() : String
     abstract fun Text() : String
     abstract fun Images() : List<Pair<String?, String?>>
 }

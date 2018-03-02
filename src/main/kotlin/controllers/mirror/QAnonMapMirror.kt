@@ -1,7 +1,6 @@
 package controllers.mirror
 
 import com.google.gson.Gson
-import controllers.mirror.InfChMirror.Companion.QTRIPS
 import extensions.iterate
 import extensions.readBytesDelayed
 import models.events.Event
@@ -15,18 +14,26 @@ import java.time.Instant
 import java.time.ZonedDateTime
 
 class QAnonMapMirror(
-        outputDirectory : String,
+        mirrorDirectory : String,
         board : String,
+        source : Source,
+        val boardFileID : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror("qanonmap", board, outputDirectory) {
+) : Mirror(mirrorDirectory, board, source, "qanonmap") {
     var threads: MutableList<InfChThread> = mutableListOf()
     val updatedThreads: MutableList<InfChThread> = mutableListOf()
-    var mirrorRoot = outputDirectory + File.separator + "qanonmap"
-    var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
+    var mirrorRoot = mirrorDirectory + File.separator + dataset
+    var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + boardFileID
     var filesRoot = mirrorRoot + File.separator + "files"
+    val exceptions = when(source) {
+        Source.FourChan -> FourChanMirror.Companion.EXCEPTIONS[board]!!
+        Source.InfChan -> InfChMirror.Companion.EXCEPTIONS[board]!!
+        else -> BoardExceptions()
+    }
 
     override fun Mirror() {
+        println(">> mirror: $this")
         updatedThreads.clear()
         if (MakeDirectory(mirrorRoot)) {
             if (!MakeDirectory(boardRoot)) {
@@ -38,67 +45,43 @@ class QAnonMapMirror(
 
             //val catalogURL = URL("http://qanonmap.github.io/data/$board.json")
             //val catalogURL = URL("https://github.com/qanonmap/qanonmap.github.io/raw/master/data/$board.json")
-            val catalogURL = URL("https://github.com/qanonmap/qanonmap.github.io/raw/master/data/json/$board.json")
-            val catalogFile = File(boardRoot + File.separator + "$board.json")
+            val catalogURL = URL("https://github.com/qanonmap/qanonmap.github.io/raw/master/data/json/$boardFileID.json")
+            val catalogFile = File(boardRoot + File.separator + "$boardFileID.json")
 
             // Update catalog json if necessary
             try {
                 if (catalogFile.iterate(catalogURL.readBytesDelayed())) {
-                    println("  Updated catalog for $board")
+                    println("  Updated catalog for $boardFileID")
                 }
             } catch (e: FileNotFoundException) {
-                println("Unable to find catalog for $board: $e")
+                println("Unable to find catalog for $boardFileID: $e")
                 return
             }
         }
     }
 
     override fun MirrorReferences() {
+        println(">> mirror refs: $this")
         // TODO
     }
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
-        val mirrorRoot = outputDirectory + File.separator + "qanonmap"
-        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
-        val catalogFile = File(boardRoot + File.separator + "$board.json")
+        val mirrorRoot = mirrorDirectory + File.separator + dataset
+        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + boardFileID
+        val catalogFile = File(boardRoot + File.separator + "$boardFileID.json")
 
-        // Set trips/ids if onlyQT flag set
-        if(params.onlyQT) {
-            params.trips.clear()
-            params.trips.addAll(QTRIPS)
+        SetupSearchParameters(params, exceptions)
 
-            params.ids.clear()
-            if(InfChMirror.EXCEPTIONS.containsKey(board)) {
-                if(InfChMirror.EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
-                    params.ids.addAll(InfChMirror.EXCEPTIONS[board]!!.qanonPosts)
-                }
-            }
-        }
-
-        println(">> board: $board")
+        println(">> search: $this")
         val posts = Gson().fromJson(catalogFile.readText(), Array<QCodeFagPost>::class.java)
         posts.forEachIndexed { index, post ->
-            val postEvent = PostEvent.fromQCodeFagPost("qanonmap", board, post)
-            var include = false
-
-            // Search on trip
-            if(params.trips.isNotEmpty() && params.trips.contains(post.trip)) {
-                include = true
-            }
-
-            // Search on content
-            if(!include) {
-                if (params.content != null) {
-                    val results = params.content.find(postEvent.Text())
-                    if (results != null) {
-                        include = true
-                    }
+            val postEvent = PostEvent.fromQCodeFagPost(dataset, source, board, post)
+            if(TestSearchParameters(params, exceptions, postEvent)) {
+                // Add to event list if it isn't already there
+                if(eventList.find { it.Link() == postEvent.Link() } == null) {
+                    eventList.add(postEvent)
                 }
-            }
-
-            if(include) {
-                eventList.add(postEvent)
             }
         }
 

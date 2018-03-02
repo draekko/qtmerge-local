@@ -70,6 +70,8 @@ data class TweetEvent(
         return ZonedDateTime.parse(created_at, formatter).withZoneSameInstant(ZoneId.of("US/Eastern"))
     }
 
+    override fun Subject(): String = ""
+
     override fun Text(): String {
         return text?:""
     }

@@ -1,5 +1,4 @@
 import controllers.mirror.InfChMirror
-import controllers.mirror.InfChMirror.Companion.QTRIPS
 import controllers.mirror.Mirror
 import models.events.Event
 import java.io.File

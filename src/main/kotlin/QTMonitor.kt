@@ -22,20 +22,20 @@ class QTMonitor(
 
     fun Monitor() {
         val mirrors = arrayListOf(
-            TwitterArchiveMirror(outputDirectory, "realDonaldTrump"),
-            InfChMirror(outputDirectory, "greatawakening"),
-            InfChMirror(outputDirectory, "qresearch")
+            TwitterArchiveMirror(outputDirectory, "realDonaldTrump", STARTTIME),
+            InfChMirror(outputDirectory, "greatawakening", STARTTIME),
+            InfChMirror(outputDirectory, "qresearch", STARTTIME)
         )
 
-        while(true) {
-            // Count QT events before
-            println("\nCounting QT Events")
-            var precount = 0
-            mirrors.forEach {
-                precount += it.MirrorSearch().count()
-            }
-            println(">> $precount events")
+        // Count QT events before
+        println("\nCounting QT Events")
+        var count = 0
+        mirrors.forEach {
+            count += it.MirrorSearch().count()
+        }
+        println(">> $count events")
 
+        while(true) {
             // Mirror post data first
             println("\nMirroring Events")
             mirrors.forEach {
@@ -56,14 +56,15 @@ class QTMonitor(
             println(">> $postcount events")
 
             // Run QT Merge and deploy if counts differ
-            if(precount != postcount) {
+            if(count != postcount) {
                 println("\nEvent counts differ, merging")
-                QTMerge()
-                if(File("deploy.sh").exists()) {
-                    println("\nDeploying")
-                    // TODO: run delpoy.sh
-                }
+                QTMerge(outputDirectory = System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge").ExportHtml()
+                println("\nDeploying")
+                // TODO: run delpoy.sh
+            } else {
+                println("\nEvent count unchanged.")
             }
+            count = postcount
 
             println("\nSleeping...")
             Thread.sleep(60000)

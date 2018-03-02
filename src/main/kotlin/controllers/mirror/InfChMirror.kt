@@ -17,52 +17,65 @@ import java.io.IOException
 import java.net.URL
 import java.net.URLEncoder
 import java.time.Instant
-import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class InfChMirror(
-        outputDirectory : String,
+        mirrorDirectory : String,
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror("8Ch", board, outputDirectory) {
+) : Mirror(mirrorDirectory, board, Source.InfChan, "anonsw") {
     var threads : MutableList<InfChThread> = arrayListOf()
     val updatedThreads : MutableList<InfChThread> = arrayListOf()
-    var mirrorRoot = outputDirectory + File.separator + "8ch"
+    var mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "8ch"
     var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
     var filesRoot = mirrorRoot + File.separator + "files"
 
-    class BoardExceptions(
-        val orphanThreads : List<InfChThread> = emptyList(),
-        val qanonPosts : List<String> = emptyList(),
-        val qstopTimes : MutableMap<String, ZonedDateTime> = mutableMapOf(),
-        val nonqPosts : List<String> = emptyList()
-    )
-
     companion object {
-        val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
-        val QTRIPS = listOf( "!UW.yye1fxo", "!ITPb.qbhqo" )
+        private val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
+        private val QTRIPS = listOf( "!UW.yye1fxo", "!ITPb.qbhqo" )
         val EXCEPTIONS = mutableMapOf(
-            Pair("qresearch", BoardExceptions(qanonPosts = listOf("476325", "476806", "508699"))),
-            Pair("cbts", BoardExceptions(
-                    orphanThreads = listOf(
-                            InfChThread(126564, time = 1513718366, last_modified = 1513725863)
-                            //404 InfChThread(139594, time = 1513718366, last_modified = 1513725863)
-                    ),
-                    qstopTimes = mutableMapOf(
-                            Pair("!ITPb.qbhqo", ZonedDateTime.of(2017, 12, 25, 15, 57, 38, 0, ZONEID)),
-                            Pair("!UW.yye1fxo", ZonedDateTime.of(2018, 1, 6, 0, 14, 43, 0, ZONEID))
-                    )
-            )),
+            Pair("greatawakening", BoardExceptions(qtrips = QTRIPS)),
+            Pair("qresearch", BoardExceptions(qtrips = QTRIPS, qanonPosts = listOf("476325", "476806", "508699"))),
             Pair("thestorm", BoardExceptions(
+                    qtrips = QTRIPS,
                     qstopTimes = mutableMapOf(
                             Pair("!ITPb.qbhqo", ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID)) // Never posted on thestorm with that trip code
                     )
-            ))
+            )),
+            Pair("cbts", BoardExceptions(
+                    qtrips = QTRIPS,
+                    qstopTimes = mutableMapOf(
+                            Pair("!ITPb.qbhqo", ZonedDateTime.of(2017, 12, 25, 15, 57, 38, 0, ZONEID)),
+                            Pair("!UW.yye1fxo", ZonedDateTime.of(2018, 1, 6, 0, 14, 43, 0, ZONEID))
+                    ),
+                    qanonPosts = listOf(
+                            "82056", "99480", "99500", "99525", "99548", "99658", "139686",
+                            "139691", "139761", "139784", "139792", "139851", "142996", "143007",
+                            "143174", "143223", "143258", "143329", "145408", "154230", "238914",
+                            "239015", "239349")
+            )),
+            Pair("pol", BoardExceptions(qtrips = QTRIPS))
         )
     }
 
+    fun InitializeThreads(board : String) {
+        threads.clear()
+
+        when(board) {
+            "cbts" -> {
+                // Add orphaned threads
+                threads.addAll(listOf(
+                        InfChThread(126564, time = 1513718366, last_modified = 1513725863)
+                        //404 InfChThread(139594, time = 1513718366, last_modified = 1513725863)
+                ))
+            }
+            else -> {}
+        }
+    }
+
     override fun Mirror() {
+        println(">> mirror: $this")
         updatedThreads.clear()
         if(MakeDirectory(mirrorRoot)) {
             if(!MakeDirectory(boardRoot)) {
@@ -86,15 +99,10 @@ class InfChMirror(
             }
 
             val catalog = Gson().fromJson(catalogFile.readText(), Array<InfChThreadPage>::class.java)
-            threads = arrayListOf()
+            InitializeThreads(board)
             catalog.forEach { page ->
                 page.threads.forEach { thread ->
                     threads.add(thread)
-                }
-            }
-            if(EXCEPTIONS.containsKey(board)) {
-                if(EXCEPTIONS[board]!!.orphanThreads.isNotEmpty()) {
-                    threads.addAll(EXCEPTIONS[board]!!.orphanThreads)
                 }
             }
             threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
@@ -156,7 +164,7 @@ class InfChMirror(
     }
 
     override fun MirrorReferences() {
-        println(">> board: $board")
+        println(">> mirror refs: $this")
 
         threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
             val threadRoot = boardRoot + File.separator + thread.no
@@ -175,7 +183,7 @@ class InfChMirror(
                 val postset = Gson().fromJson(threadFile.readText(), InfChPostSet::class.java)
                 postset.posts.forEachIndexed { postIndex, post ->
                     if (postIndex == 0) {
-                        println(">> thread: ${thread.no} (${cleanHTMLText(post.sub
+                        println("  >> thread: ${thread.no} (${cleanHTMLText(post.sub
                                 ?: "").lines().first()}): ${index + 1} / ${threads.size} (% ${Math.round(index.toFloat() / threads.size * 100)})")
                         if (threadUpdated) {
                         }
@@ -190,7 +198,7 @@ class InfChMirror(
                     }
                 }
             } else {
-                println(">> thread: ${thread.no}: unable to find thread file: $threadFile")
+                println("  >> thread: ${thread.no}: unable to find thread file: $threadFile")
             }
         }
     }
@@ -210,24 +218,13 @@ class InfChMirror(
 
     override fun MirrorSearch(params : SearchParameters) : List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
-        val mirrorRoot = outputDirectory + File.separator + "8ch"
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
         val threads = mutableListOf<InfChThread>()
 
-        println(">> board: $board")
+        println(">> search: $this")
 
-        // Set trips/ids if onlyQT flag set
-        if(params.onlyQT) {
-            params.trips.clear()
-            params.trips.addAll(QTRIPS)
-
-            params.ids.clear()
-            if(EXCEPTIONS.containsKey(board)) {
-                if(EXCEPTIONS[board]!!.qanonPosts.isNotEmpty()) {
-                    params.ids.addAll(EXCEPTIONS[board]!!.qanonPosts)
-                }
-            }
-        }
+        InitializeThreads(board)
+        SetupSearchParameters(params, EXCEPTIONS[board]!!)
 
         // Gather threads from catalogs
         File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
@@ -247,7 +244,7 @@ class InfChMirror(
         threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
             val pct = Math.round(index.toFloat() / threads.size * 1000)
             if(pct.rem(100) == 0) {
-                println(">> thread: ${thread.no}: ${index + 1} / ${threads.size} (% ${pct/10})")
+                println("  >> thread: ${thread.no}: ${index + 1} / ${threads.size} (% ${pct/10})")
             }
 
             if (Instant.ofEpochSecond(thread.time).isAfter(startTime.toInstant()) &&
@@ -258,43 +255,12 @@ class InfChMirror(
                         if (it.name.startsWith(thread.no.toString()) && it.extension.startsWith("json")) {
                             val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
                             postset.posts.forEach { post ->
-                                val postEvent = PostEvent.fromInfChPost("anonsw", board, post)
-                                var include = false
-
-                                // Search on trip
-                                if(!include && params.trips.isNotEmpty()) {
-                                    include = params.trips.contains(post.trip)
-                                }
-
-                                // Search on post id
-                                if(!include && params.ids.isNotEmpty()) {
-                                    include = params.ids.contains(postEvent.id)
-                                }
-
-                                // Handle exceptions
-                                if(include && params.onlyQT) {
-                                    if(EXCEPTIONS.containsKey(board)) {
-                                        if(EXCEPTIONS[board]!!.nonqPosts.isNotEmpty()) {
-                                            if(EXCEPTIONS[board]!!.nonqPosts.contains(postEvent.id)) {
-                                                include = false
-                                            }
-                                        }
-                                        if(EXCEPTIONS[board]!!.qstopTimes.containsKey(postEvent.trip)) {
-                                            if(Instant.ofEpochSecond(postEvent.timestamp).isAfter(EXCEPTIONS[board]!!.qstopTimes[postEvent.trip]!!.toInstant())) {
-                                                include = false
-                                            }
-                                        }
+                                val postEvent = PostEvent.fromInfChPost("anonsw", source, board, post)
+                                if(TestSearchParameters(params, EXCEPTIONS[board]!!, postEvent)) {
+                                    // Add to event list if it isn't already there
+                                    if(eventList.find { it.Link() == postEvent.Link() } == null) {
+                                        eventList.add(postEvent)
                                     }
-                                }
-
-                                // Search on content
-                                if(!include && (params.content != null)) {
-                                    include = (params.content.find(postEvent.Text()) != null)
-                                }
-
-                                // Finally, add to event list if it isn't already there
-                                if(include && (eventList.find { it.Link() == postEvent.Link() } == null)) {
-                                    eventList.add(postEvent)
                                 }
                             }
                         }

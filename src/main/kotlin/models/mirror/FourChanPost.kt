@@ -13,7 +13,7 @@ data class FourChanPost(
     var name : String,
     var trip : String?,
     var title : String,
-    var comment : String,
+    var comment : String?,
     var poster_hash : String,
     var poster_country : String,
     var sticky : String,

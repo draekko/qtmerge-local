@@ -36,6 +36,8 @@ class NewsEvent(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    override fun Subject(): String = headline?:""
+
     override fun Text(): String = headline?:url?:""
 
     override fun Timestamp(): ZonedDateTime {

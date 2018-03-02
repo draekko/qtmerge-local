@@ -1,16 +1,20 @@
 package models.events
 
+import controllers.mirror.FourChanMirror
+import controllers.mirror.InfChMirror
+import controllers.mirror.Mirror
 import models.importer.QCodeFagPost
+import models.mirror.FourChanPost
 import models.mirror.InfChPost
 import utils.HTML.Companion.cleanHTMLText
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import javax.xml.bind.DatatypeConverter
 
 data class PostEvent(
         var datasets : MutableList<String>,
         var board : String,
+        var source : Mirror.Source,
         var id : String,
         var userId : String?,
         var timestamp : Long,
@@ -24,24 +28,78 @@ data class PostEvent(
         var threadId : String,
         var images : MutableList<PostEventImage>?,
         var postReferences: MutableList<PostEvent>,
-        var anonVerifiedAsQ: MutableList<Int>,
+        var inGraphics: MutableList<String>,
         private var references : MutableList<String>,
         private var referenceID : String
 ) : Event() {
     data class PostEventImage(
-            var url : String?,
-            var filename : String?
+        var url : String?,
+        var filename : String?
     )
 
     companion object {
+        data class Graphic(
+            var source : Mirror.Source,
+            var id : String,
+            var anon : Boolean,
+            var links : List<String>,
+            var conflinks : List<String>,
+            var confnotes : List<String>,
+            var notes : String = ""
+        )
+        val GRAPHICS = listOf(
+            Graphic(Mirror.Source.FourChan,"148016876", true,
+                    listOf("https://archive.4plebs.org/pol/thread/147978093/#147985268", "https://archive.4plebs.org/pol/thread/148016618/#148016876"),
+                    listOf("https://archive.4plebs.org/pol/thread/148016618/#148016876"),
+                    listOf("Graphic is right."),
+                    "Q reposted graphic without modification"),
+            Graphic(Mirror.Source.FourChan,"148028820", true,
+                    listOf("https://archive.4plebs.org/pol/thread/148019103/#148028820"),
+                    listOf("https://archive.4plebs.org/pol/thread/148019103/#148029633"),
+                    listOf("Thank you Anon.")),
+            Graphic(Mirror.Source.FourChan,"148136656", true,
+                    listOf("https://archive.4plebs.org/pol/thread/148136485/#148136656"),
+                    listOf("https://archive.4plebs.org/pol/thread/148136485/#148139234"),
+                    listOf("Re-read complete crumb graphic (confirmed good).")),
+            Graphic(Mirror.Source.FourChan,"148147343", true,
+                    listOf("https://archive.4plebs.org/pol/thread/148146734/#148147343"),
+                    listOf("https://archive.4plebs.org/pol/thread/148146734/#148148004"),
+                    listOf("Graphic confirmed.")),
+            Graphic(Mirror.Source.FourChan,"148779656", false,
+                    listOf("https://archive.4plebs.org/pol/thread/148767870/#148768131", "https://archive.4plebs.org/pol/thread/148777785/#148779656"),
+                    listOf("https://archive.4plebs.org/pol/thread/148777785/#148779656"),
+                    listOf("Attached gr[A]phic is correct."),
+                    "Q reposted graphic without modification"),
+            Graphic(Mirror.Source.FourChan,"148872136", false,
+                    listOf("https://archive.4plebs.org/pol/thread/148866159/#148872136"),
+                    listOf("https://archive.4plebs.org/pol/thread/148866159/#148872500"),
+                    listOf("Confirmed.\nCorrect.")),
+            Graphic(Mirror.Source.FourChan,"149083850", false,
+                    listOf("https://archive.4plebs.org/pol/thread/149080733/#149083850"),
+                    listOf("https://archive.4plebs.org/pol/thread/150171127/#150172069", "https://archive.4plebs.org/pol/thread/150171127/#150172817"),
+                    listOf("QMAP 1/2 confirmed.", "1&2 confirmed."),
+                    "1?"),
+            Graphic(Mirror.Source.FourChan,"150171513", false,
+                    listOf("https://archive.4plebs.org/pol/thread/150171127/#150171513"),
+                    listOf("https://archive.4plebs.org/pol/thread/150171127/#150172069", "https://archive.4plebs.org/pol/thread/150171127/#150172817"),
+                    listOf("QMAP 1/2 confirmed.", "1&2 confirmed."),
+                    "2?"),
+            Graphic(Mirror.Source.FourChan,"150171863", false,
+                    listOf("https://archive.4plebs.org/pol/thread/150171127/#150171863"),
+                    listOf("https://archive.4plebs.org/pol/thread/150171127/#150172069", "https://archive.4plebs.org/pol/thread/150171127/#150172817"),
+                    listOf("QMAP 1/2 confirmed.", "1&2 confirmed."),
+                    "2?")
+        )
+
         fun makeReferenceID(link : String) = link //DatatypeConverter.printHexBinary(MD5.digest(link.toByteArray()))
 
-        fun fromInfChPost(dataset : String, board : String, infChPost: InfChPost) : PostEvent {
+        fun fromInfChPost(dataset : String, source: Mirror.Source, board: String, infChPost: InfChPost) : PostEvent {
             val threadId = if(infChPost.resto == 0L) infChPost.no else infChPost.resto
             val link = "https://8ch.net/$board/res/$threadId.html#${infChPost.no}"
             val postEvent = PostEvent(
                     mutableListOf(dataset),
                     board,
+                    source,
                     infChPost.no.toString(),
                     infChPost.id,
                     infChPost.time,
@@ -67,159 +125,66 @@ data class PostEvent(
                 postEvent.images!!.add(PostEventImage("https://media.8ch.net/file_store/${it.tim}${it.ext}", it.filename))
             }
 
+            // Link graphics/maps
+            val graphicMap = when(source) {
+                Mirror.Source.InfChan -> {
+                    InfChMirror.EXCEPTIONS[board]!!.qgraphics
+                }
+                else -> listOf()
+            }
+            if(graphicMap.find { it.first == postEvent.id } != null) {
+                postEvent.inGraphics.addAll(graphicMap.find { it.first == postEvent.id }!!.second)
+            }
+
             return postEvent
         }
 
-        fun fromQCodeFagPost(dataset : String, board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
-            // 1 - https://archive.4plebs.org/pol/thread/148136485/#148136656
-            // 2 - https://archive.4plebs.org/pol/thread/148146734/#148147343
-            // 3 - https://archive.4plebs.org/pol/thread/148777785/#148779656
-            // 4 - https://archive.4plebs.org/pol/thread/148866159/#148872136
-            // 5 - https://archive.4plebs.org/pol/thread/149080733/#149083850
-            // 6 - https://archive.4plebs.org/pol/thread/150171127/#150171513
-            // 7 - https://archive.4plebs.org/pol/thread/150171127/#150171863
-            // 8 - https://8ch.net/qresearch/res/387596.html#387700
-            val graphicPostIds : Map<String, List<Pair<String, List<Int>>>> = mapOf(
-                    Pair("4chan_pol", listOf(
-                            Pair("147023341", listOf(            5      )),
-                            Pair("147012719", listOf(            5      )),
-                            Pair("147104628", listOf(         4, 5      )),
-                            Pair("147106598", listOf(         4, 5      )),
-                            Pair("147109593", listOf(         4, 5      )),
-                            Pair("147166292", listOf(      3, 4, 5      )),
-                            Pair("147167304", listOf(      3, 4, 5      )),
-                            Pair("147169329", listOf(      3, 4, 5      )),
-                            Pair("147170576", listOf(      3, 4, 5      )),
-                            Pair("147173287", listOf(      3, 4, 5      )),
-                            Pair("147175452", listOf(      3, 4, 5      )),
-                            Pair("147181191", listOf(      3, 4, 5      )),
-                            Pair("147181801", listOf(      3, 4, 5      )),
-                            Pair("147433975", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147434025", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147437247", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147440171", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147441378", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147443190", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147444335", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147444934", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147445681", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147446992", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147448408", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147449010", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147449624", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147450817", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147451052", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147452214", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147453147", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147454188", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147454631", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147455196", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147567888", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147567928", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147581302", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147581516", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147586045", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147588085", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147588421", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147590619", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147591125", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147591663", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147592019", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147632662", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147634822", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147636035", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147640127", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147641320", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147642680", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147643257", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147645024", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147646189", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147646606", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147647154", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147661217", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147661243", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147661332", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147664082", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147679416", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147680054", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147680749", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147681912", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147683156", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147687684", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147689362", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147816901", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147817468", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147819733", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147975558", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147979863", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147981354", listOf(1, 2, 3, 4, 5      )),
-                            Pair("147986661", listOf(         4, 5      )),
-                            Pair("147987614", listOf(         4, 5      )),
-                            Pair("148016618", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148016670", listOf(                   )),
-                            Pair("148016731", listOf(                   )),
-                            Pair("148016769", listOf(                   )),
-                            Pair("148016876", listOf(                   )),
-                            Pair("148019575", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148019905", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148020085", listOf(                   )),
-                            Pair("148020278", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148021501", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148022145", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148022342", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148023976", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148025825", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148027165", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148029633", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148029962", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148031295", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148032210", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148032910", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148033178", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148033932", listOf(1, 2, 3, 4, 5      )),
-                            Pair("148139234", listOf(   2, 3, 4, 5      )),
-                            Pair("148139484", listOf(   2, 3, 4, 5      )),
-                            Pair("148143472", listOf(   2, 3, 4, 5      )),
-                            Pair("148143562", listOf(   2, 3, 4, 5      )),
-                            Pair("148148004", listOf(         4, 5      )),
-                            Pair("148149435", listOf(         4, 5      )),
-                            Pair("148152047", listOf(         4, 5      )),
-                            Pair("148154137", listOf(         4, 5      )),
-                            Pair("148154941", listOf(         4, 5      )),
-                            Pair("148155343", listOf(         4, 5      )),
-                            Pair("148155609", listOf(         4, 5      )),
-                            Pair("148156129", listOf(         4, 5      )),
-                            Pair("148156632", listOf(         4, 5      )),
-                            Pair("148156937", listOf(         4, 5      )),
-                            Pair("148183670", listOf(      3, 4, 5      )),
-                            Pair("148185083", listOf(      3, 4, 5      )),
-                            Pair("148185905", listOf(      3, 4, 5      )),
-                            Pair("148186256", listOf(      3, 4, 5      )),
-                            Pair("148189295", listOf(                   )),
-                            Pair("148286961", listOf(      3, 4, 5      )),
-                            Pair("148287184", listOf(      3, 4, 5      )),
-                            Pair("148287236", listOf(      3, 4, 5      )),
-                            Pair("148287326", listOf(      3, 4, 5      )),
-                            Pair("148287396", listOf(      3, 4, 5      )),
-                            Pair("148287473", listOf(      3, 4, 5      )),
-                            Pair("148287529", listOf(      3, 4, 5      )),
-                            Pair("148289594", listOf(         4, 5      )),
-                            Pair("148452545", listOf(      3            )),
-                            Pair("148453749", listOf(      3, 4, 5      )),
-                            Pair("148455482", listOf(      3, 4, 5      )),
-                            Pair("148457032", listOf(      3, 4, 5      )),
-                            Pair("150170117", listOf(               6, 7)),
-                            Pair("150170181", listOf(               6, 7)),
-                            Pair("150171298", listOf(                  7))
-                    ))
-            )
-            val qmapRefs = mutableListOf<Int>()
-            if(graphicPostIds.containsKey(qCodeFagPost.source) && (graphicPostIds[qCodeFagPost.source]!!.find { it.first == qCodeFagPost.id } != null)) {
-                qmapRefs.addAll(graphicPostIds[qCodeFagPost.source]!!.find { it.first == qCodeFagPost.id }!!.second)
-            }
+        fun fromFourChanPost(dataset: String, source: Mirror.Source, board: String, fourChanPost: FourChanPost) : PostEvent {
+            val link = "https://archive.4plebs.org/$board/thread/${fourChanPost.thread_num}/#${fourChanPost.num}"
             val postEvent = PostEvent(
                     mutableListOf(dataset),
                     board,
+                    source,
+                    fourChanPost.num,
+                    fourChanPost.poster_hash,
+                    fourChanPost.timestamp,
+                    fourChanPost.title,
+                    fourChanPost.name,
+                    fourChanPost.email,
+                    fourChanPost.trip,
+                    cleanHTMLText(fourChanPost.comment?:""),
+                    "",
+                    link,
+                    fourChanPost.thread_num,
+                    mutableListOf(),
+                    mutableListOf(),
+                    mutableListOf(),
+                    mutableListOf(),
+                    makeReferenceID(link)
+            )
+
+            if(fourChanPost.media != null) {
+                postEvent.images!!.add(PostEventImage(fourChanPost.media!!.media_link, fourChanPost.media!!.media_filename))
+            }
+
+            val graphicMap = when(source) {
+                Mirror.Source.FourChan -> {
+                    FourChanMirror.EXCEPTIONS[board]!!.qgraphics
+                }
+                else -> listOf()
+            }
+            if(graphicMap.find { it.first == postEvent.id } != null) {
+                postEvent.inGraphics.addAll(graphicMap.find { it.first == postEvent.id }!!.second)
+            }
+
+            return postEvent
+        }
+
+        fun fromQCodeFagPost(dataset : String, source: Mirror.Source, board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
+            val postEvent = PostEvent(
+                    mutableListOf(dataset),
+                    board,
+                    source,
                     qCodeFagPost.id,
                     qCodeFagPost.userId,
                     qCodeFagPost.timestamp,
@@ -233,7 +198,7 @@ data class PostEvent(
                     qCodeFagPost.threadId?:"",
                     mutableListOf(),
                     mutableListOf(),
-                    qmapRefs,
+                    mutableListOf(),
                     mutableListOf(),
                     makeReferenceID(qCodeFagPost.link)
             )
@@ -246,6 +211,17 @@ data class PostEvent(
 
             // Fix extra slashes in link
             postEvent.link = postEvent.link.replace(Regex("""(?<!https?:)/+"""), "/")
+
+            // Link graphics/maps
+            val graphicMap = when(source) {
+                Mirror.Source.FourChan -> {
+                    FourChanMirror.EXCEPTIONS[board]!!.qgraphics
+                }
+                else -> listOf()
+            }
+            if(graphicMap.find { it.first == postEvent.id } != null) {
+                postEvent.inGraphics.addAll(graphicMap.find { it.first == postEvent.id }!!.second)
+            }
 
             return postEvent
         }
@@ -286,6 +262,8 @@ data class PostEvent(
     override fun Timestamp(): ZonedDateTime {
         return ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("US/Eastern"))
     }
+
+    override fun Subject() : String = subject?:""
 
     override fun Text(): String = text?:""
 

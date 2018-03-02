@@ -17,10 +17,12 @@ class TwitterArchiveMirror(
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror("TwitterArchive", board, outputDirectory) {
+) : Mirror(outputDirectory, board, Source.Twitter, "twitterarchive") {
 
     override fun Mirror() {
-        val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
+        println(">> mirror: $this")
+
+        val mirrorRoot = mirrorDirectory + File.separator + dataset
         if (MakeDirectory(mirrorRoot)) {
             val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
             val filesRoot = mirrorRoot + File.separator + "files"
@@ -34,7 +36,7 @@ class TwitterArchiveMirror(
             }
 
             years.forEachIndexed { index, year ->
-                println(">> thread: $year: ${index + 1} / ${years.count()} (% ${Math.round(index.toFloat()/years.count()*100)})")
+                println("  >> thread: $year: ${index + 1} / ${years.count()} (% ${Math.round(index.toFloat()/years.count()*100)})")
                 val tweetURL = URL("http://trumptwitterarchive.com/data/${board.toLowerCase()}/$year.json")
                 val tweetFile = File(boardRoot + File.separator + "$year.json")
 
@@ -62,7 +64,7 @@ class TwitterArchiveMirror(
     }
 
     override fun MirrorReferences() {
-        println(">> board: $board")
+        println(">> mirror refs: $this")
         // TODO: implement
     }
 
@@ -80,17 +82,17 @@ class TwitterArchiveMirror(
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
-        val mirrorRoot = outputDirectory + File.separator + "twitterarchive"
+        val mirrorRoot = mirrorDirectory + File.separator + dataset
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
         val years = (2017..2018)
 
-        println(">> board: $board")
+        println(">> search: $this")
         years.forEachIndexed { index, year ->
             val tweetFile = File(boardRoot + File.separator + "$year.json")
 
             val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
             tweets.forEach { tweet ->
-                val tweetEvent = TweetEvent.fromTwitterArchiveTweet("trumptwitterarchive", board, tweet)
+                val tweetEvent = TweetEvent.fromTwitterArchiveTweet(dataset, board, tweet)
                 if (tweetEvent.Timestamp().toInstant().isAfter(startTime.toInstant()) &&
                         tweetEvent.Timestamp().toInstant().isBefore(stopTime.toInstant())) {
                     var include = true
