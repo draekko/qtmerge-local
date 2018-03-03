@@ -21,6 +21,7 @@ class QTMerge(
     var mirrorLabel : String = "2018-02-15",
     var outputDirectory : String = System.getProperty("user.dir") + File.separator + "anonsw.github.io" + File.separator + "qtmerge"
 ) {
+    var mirrors : MutableList<Mirror> = arrayListOf()
     var events : MutableList<Event> = arrayListOf()
 
     companion object {
@@ -134,8 +135,33 @@ class QTMerge(
         File("$outputDirectory/qtmerge.json").writeText(Gson().toJson(events.sortedBy { it.Timestamp().toEpochSecond() }))
     }
 
+    fun MakeHeader(title : String = "", bodyStyle : String = "") : String = """
+        |<!doctype html>
+        |<html lang="en">
+        |   <head>
+        |       <meta charset="utf-8">
+        |       <title>qtmerge v$VERSION${if(title.isNotEmpty()) " $title" else ""}</title>
+        |       <link rel="stylesheet" href="../styles/reset.css">
+        |       <link rel="stylesheet" href="../styles/screen.css">
+        |       <link rel="stylesheet" href="qtmerge.css">
+        |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
+        |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
+        |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+        |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
+        |       <script type="text/javascript" src="../scripts/jquery.highlight-5.js"></script>
+        |       <script type="text/javascript" src="../scripts/underscore-min.js"></script>
+        |       <script type="text/javascript" src="../scripts/moment.min.js"></script>
+        |       <script type="text/javascript" src="../scripts/moment-timezone-with-data-2012-2022.js"></script>
+        |       <!--
+        |         -- qtmerge v$VERSION
+        |         -- https://anonsw.github.com/qtmerge/
+        |         -->
+        |   </head>
+        |   <body${if(bodyStyle.isNotEmpty()) " style=\"$bodyStyle\"" else ""}>
+        |   ${if(title.isNotEmpty()) "<h1>qtmerge v$VERSION $title</h1>" else ""}
+        """.trimMargin()
+
     fun ExportHtml() {
-        val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
         val dsout = File("$outputDirectory/datasets.html").outputStream().bufferedWriter()
         val graphicrows = PostEvent.GRAPHICS.mapIndexed { index, graphic -> """
             |<tr>
@@ -147,31 +173,8 @@ class QTMerge(
             |   <td style="text-align:left;">${graphic.notes}</td>
             |</tr>
             """.trimMargin() }.joinToString("")
+        dsout.append(MakeHeader("Datasets", "margin-top:0;"))
         dsout.append("""
-            |<!doctype html>
-            |<html lang="en">
-            |   <head>
-            |       <meta charset="utf-8">
-            |       <title>qtmerge v$VERSION Datasets</title>
-            |       <link rel="stylesheet" href="../styles/reset.css">
-            |       <link rel="stylesheet" href="../styles/screen.css">
-            |       <link rel="stylesheet" href="qtmerge.css">
-            |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
-            |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
-            |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-            |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
-            |       <script type="text/javascript" src="../scripts/jquery.highlight-5.js"></script>
-            |       <script type="text/javascript" src="../scripts/underscore-min.js"></script>
-            |       <script type="text/javascript" src="../scripts/moment.min.js"></script>
-            |       <script type="text/javascript" src="../scripts/moment-timezone-with-data-2012-2022.js"></script>
-            |       <!--
-            |         -- qtmerge v$VERSION
-            |         -- https://anonsw.github.com/qtmerge/
-            |         -->
-            |   </head>
-            |   <body style="margin-top :0 ">
-            |   <h1>qtmerge v$VERSION Datasets</h1>
-            |
             |   <h2>Raw Sources</h2>
             |   <p>The raw source data for posts and tweets come originally from these websites:</p>
             |   <ul>
@@ -224,28 +227,8 @@ class QTMerge(
             """.trimMargin())
         val out = File("$outputDirectory/index.html").outputStream().bufferedWriter()
         val qmaps = PostEvent.GRAPHICS.mapIndexed { index, graphic -> "<a href=\"${graphic.links.first()}\" title=\"${graphic.id}\">Q Map ${index+1}</a>" }.joinToString(" | ")
-        out.append("""<!doctype html>
-            |<html lang="en">
-            |   <head>
-            |       <meta charset="utf-8">
-            |       <title>qtmerge v$VERSION</title>
-            |       <link rel="stylesheet" href="../styles/reset.css">
-            |       <link rel="stylesheet" href="../styles/screen.css">
-            |       <link rel="stylesheet" href="qtmerge.css">
-            |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
-            |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
-            |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-            |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
-            |       <script type="text/javascript" src="../scripts/jquery.highlight-5.js"></script>
-            |       <script type="text/javascript" src="../scripts/underscore-min.js"></script>
-            |       <script type="text/javascript" src="../scripts/moment.min.js"></script>
-            |       <script type="text/javascript" src="../scripts/moment-timezone-with-data-2012-2022.js"></script>
-            |       <!--
-            |         -- qtmerge v$VERSION
-            |         -- https://anonsw.github.com/qtmerge/
-            |         -->
-            |   </head>
-            |   <body>
+        out.append(MakeHeader())
+        out.append("""
             |   <div id="header">
             |       <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZONEID).format(FORMATTER)}</p>
             |       <div class="datasets">
@@ -327,6 +310,11 @@ class QTMerge(
 
         dsout.appendln("</table></body></html>")
         dsout.close()
+
+        val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
+        qcat.append(MakeHeader("Thread Catalog", "margin-top: 0;"))
+        qcat.append("</body></html>")
+        qcat.close()
     }
 
     fun MakeEventRow(event: Event, count : Int) : String {
