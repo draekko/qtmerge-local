@@ -245,12 +245,6 @@ class QTMerge(
             |       <div class="derived">
             |           <a href="catalog.html">Thread Catalog</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
-            |       <div id="donate">
-            |           <div style="display:inline-block;line-height:1.75em;">Thank you for your support!<br>
-            |               bitcoin:<span class="bitcoin-address"><a href="bitcoin:1E6PNKbB5g5V9XF8y8XmmXaXGmQuW3r2aH">1E6PNKbB5g5V9XF8y8XmmXaXGmQuW3r2aH</a></span>
-            |           </div>
-            |           <a href="../images/bitcoin-qrcode.png"><img src="../images/bitcoin-qrcode.png"></a>
-            |       </div>
             |       <div class="menu">
             |           <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
             |       </div>
