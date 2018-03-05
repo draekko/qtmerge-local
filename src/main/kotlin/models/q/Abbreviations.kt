@@ -146,6 +146,7 @@ class Abbreviations {
 			Pair("MSM", "Mainstream Media"),
 			Pair("MW", "Maxine Waters"),
 			Pair("MZ", "Mark Zuckerberg"),
+			Pair("NAFTA", "North American Free Trade Agreement"),
 			Pair("NAT SEC", "National Security"),
             Pair("NAT G", "National Guard"),
 			Pair("NG", "National Guard"),
