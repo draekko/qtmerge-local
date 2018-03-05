@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
 
 class QTMonitor(
         mirrorLabel : String = "2018-02-15",
-        val outputDirectory : String = DATADIR + File.separator + mirrorLabel
+        val mirrorDirectory: String = DATADIR + File.separator + mirrorLabel
 ) {
     companion object {
         val ZONEID = ZoneId.of("US/Eastern")
@@ -33,9 +33,9 @@ class QTMonitor(
 
         while(true) {
             val mirrors = arrayListOf(
-                    TwitterArchiveMirror(outputDirectory, "realDonaldTrump", STARTTIME),
-                    InfChMirror(outputDirectory, "greatawakening", STARTTIME),
-                    InfChMirror(outputDirectory, "qresearch", STARTTIME)
+                    TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", STARTTIME),
+                    InfChMirror(mirrorDirectory, "greatawakening", STARTTIME),
+                    InfChMirror(mirrorDirectory, "qresearch", STARTTIME)
             )
 
             // Mirror post data first
@@ -61,7 +61,7 @@ class QTMonitor(
             // Run QT Merge and deploy if counts differ
             if(count != postcount) {
                 println("\nEvent counts differ, merging")
-                QTMerge(outputDirectory = System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge").ExportHtml()
+                QTMerge(mirrorDirectory = System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge").ExportHtml()
                 println("\nDeploying")
                 // TODO: run delpoy.sh
             } else {

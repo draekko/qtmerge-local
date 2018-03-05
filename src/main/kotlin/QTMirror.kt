@@ -24,14 +24,14 @@ class QTMirror(
         val mirrors = arrayListOf(
                 TwitterArchiveMirror(outputDirectory, "realDonaldTrump"),
                 /*
-                TwitterArchiveMirror(outputDirectory, "hillaryclinton"),
-                TwitterArchiveMirror(outputDirectory, "senatorsessions"),
-                TwitterArchiveMirror(outputDirectory, "POTUS"),
-                TwitterArchiveMirror(outputDirectory, "genflynn"),
-                TwitterArchiveMirror(outputDirectory, "govpencein"),
-                TwitterArchiveMirror(outputDirectory, "vp"),
-                TwitterArchiveMirror(outputDirectory, "repmikepompeo"),
-                TwitterArchiveMirror(outputDirectory, "seanhannity"),
+                TwitterArchiveMirror(mirrorDirectory, "hillaryclinton"),
+                TwitterArchiveMirror(mirrorDirectory, "senatorsessions"),
+                TwitterArchiveMirror(mirrorDirectory, "POTUS"),
+                TwitterArchiveMirror(mirrorDirectory, "genflynn"),
+                TwitterArchiveMirror(mirrorDirectory, "govpencein"),
+                TwitterArchiveMirror(mirrorDirectory, "vp"),
+                TwitterArchiveMirror(mirrorDirectory, "repmikepompeo"),
+                TwitterArchiveMirror(mirrorDirectory, "seanhannity"),
                 */
                 QCodeFagMirror(outputDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
                 QCodeFagMirror(outputDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
@@ -62,10 +62,10 @@ class QTMirror(
                 InfChMirror(outputDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
                 InfChMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
                 FourChanMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
-                //TwitterMirror(outputDirectory, "JulianAssange")
-                //TwitterMirror(outputDirectory, "Wikileaks")
-                //TwitterMirror(outputDirectory, "Snowden")
-                //TwitterMirror(outputDirectory, "Snowden")
+                //TwitterMirror(mirrorDirectory, "JulianAssange")
+                //TwitterMirror(mirrorDirectory, "Wikileaks")
+                //TwitterMirror(mirrorDirectory, "Snowden")
+                //TwitterMirror(mirrorDirectory, "Snowden")
         )
 
         // Mirror post data first
