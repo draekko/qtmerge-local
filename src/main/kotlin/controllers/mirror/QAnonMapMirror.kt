@@ -71,13 +71,11 @@ class QAnonMapMirror(
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + boardFileID
         val catalogFile = File(boardRoot + File.separator + "$boardFileID.json")
 
-        SetupSearchParameters(params, exceptions)
-
         println(">> search: $this")
         val posts = Gson().fromJson(catalogFile.readText(), Array<QCodeFagPost>::class.java)
         posts.forEachIndexed { index, post ->
             val postEvent = PostEvent.fromQCodeFagPost(dataset, source, board, post)
-            if(TestSearchParameters(params, exceptions, postEvent)) {
+            if(params.condition.Search(exceptions, postEvent)) {
                 // Add to event list if it isn't already there
                 if(eventList.find { it.Link() == postEvent.Link() } == null) {
                     eventList.add(postEvent)

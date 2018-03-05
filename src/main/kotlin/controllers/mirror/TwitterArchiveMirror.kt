@@ -95,12 +95,11 @@ class TwitterArchiveMirror(
                 val tweetEvent = TweetEvent.fromTwitterArchiveTweet(dataset, board, tweet)
                 if (tweetEvent.Timestamp().toInstant().isAfter(startTime.toInstant()) &&
                         tweetEvent.Timestamp().toInstant().isBefore(stopTime.toInstant())) {
-                    var include = true
-                    // TODO: perform search
-                    //println(">> post: ${post.no}")
-
-                    if(include) {
-                        eventList.add(tweetEvent)
+                    if(params.condition.Search(BoardExceptions(), tweetEvent)) {
+                        // Add to event list if it isn't already there
+                        if(eventList.find { it.Link() == tweetEvent.Link() } == null) {
+                            eventList.add(tweetEvent)
+                        }
                     }
                 }
             }

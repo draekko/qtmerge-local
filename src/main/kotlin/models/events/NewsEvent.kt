@@ -1,12 +1,15 @@
 package models.events
 
+import controllers.mirror.Mirror
 import models.events.Event
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class NewsEvent(
-        var datasets : MutableList<String>,
+        datasets : MutableList<String>,
+        board : String,
+        source : Mirror.Source,
         var id: String,
         var url: String,
         var date : Long,
@@ -14,12 +17,10 @@ class NewsEvent(
         var description : String?,
         var imageUrl : String,
         private var references : MutableList<String>
-) : Event() {
-    override fun Datasets(): List<String> = datasets
-
+) : Event(datasets, board, source) {
     override fun ID(): String = id
 
-    override fun Board(): String = ""
+    override fun ThreadID(): String = ""
 
     override fun Images(): List<Pair<String?, String?>> {
         return listOf(Pair(imageUrl, imageUrl))

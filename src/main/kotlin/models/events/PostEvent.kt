@@ -11,10 +11,10 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-data class PostEvent(
-        var datasets : MutableList<String>,
-        var board : String,
-        var source : Mirror.Source,
+class PostEvent(
+        datasets : MutableList<String>,
+        board : String,
+        source : Mirror.Source,
         var id : String,
         var userId : String?,
         var timestamp : Long,
@@ -31,7 +31,7 @@ data class PostEvent(
         var inGraphics: MutableList<String>,
         private var references : MutableList<String>,
         private var referenceID : String
-) : Event() {
+) : Event(datasets, board, source) {
     data class PostEventImage(
         var url : String?,
         var filename : String?
@@ -110,7 +110,7 @@ data class PostEvent(
                     cleanHTMLText(infChPost.com),
                     infChPost.sub,
                     link,
-                    infChPost.resto.toString(),
+                    threadId.toString(),
                     mutableListOf(),
                     mutableListOf(),
                     mutableListOf(),
@@ -241,13 +241,11 @@ data class PostEvent(
         }
     }
 
-    override fun Datasets(): List<String> = datasets
-
     override fun Type(): String = "Post"
 
     override fun ID(): String = id
 
-    override fun Board(): String = board
+    override fun ThreadID(): String = threadId
 
     override fun Trip(): String = if(trip.isNullOrEmpty()) "Anonymous" else trip?:""
 
@@ -263,7 +261,7 @@ data class PostEvent(
         return ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("US/Eastern"))
     }
 
-    override fun Subject() : String = subject?:""
+    override fun Subject() : String = if(title.isNullOrEmpty()) subject?:"" else title?:""
 
     override fun Text(): String = text?:""
 

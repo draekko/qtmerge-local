@@ -21,7 +21,7 @@ class QTSearch(
         val ZONEID = ZoneId.of("US/Eastern")
         val VERSION = "2018.2-1"
         val DATADIR = System.getProperty("user.dir") + File.separator + "mirror"
-        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZoneId.of("US/Eastern"))
+        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZONEID)
         val DATEFORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
     }
 
@@ -39,13 +39,13 @@ class QTSearch(
         println("Loading events...")
         // Load events that match search criteria and options
         val events : MutableList<Event> = arrayListOf()
-        val params = Mirror.SearchParameters(content = regex, referenceDepth = Mirror.ReferenceDepth.Shallow, onlyQT = false)
+        val params = Mirror.SearchParameters(Mirror.SearchOperand.Content(regex), referenceDepth = Mirror.ReferenceDepth.Shallow)
         events.addAll(InfChMirror(inputDirectory, "greatawakening").MirrorSearch(params))
         events.addAll(InfChMirror(inputDirectory, "qresearch").MirrorSearch(params))
         println("Loaded ${events.size} events.")
 
         println("Finding references...")
-        // Number events
+        // Enumerate events
         events.forEachIndexed { index, event ->
             event.UID = index.toString()
             event.FindReferences()

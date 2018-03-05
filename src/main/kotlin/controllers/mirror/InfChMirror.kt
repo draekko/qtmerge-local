@@ -30,13 +30,22 @@ class InfChMirror(
     var mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "8ch"
     var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
     var filesRoot = mirrorRoot + File.separator + "files"
+    val catalogURL = URL("https://8ch.net/$board/threads.json")     // Starting around 2018-03-04 catalog.json is now threads.json
+    val catalogFile = File(boardRoot + File.separator + "threads.json")
+    val archiveURL = URL("https://8ch.net/$board/archive/index.html")
+    val archiveFile = File(boardRoot + File.separator + "archive.html")
 
     companion object {
         private val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
         private val QTRIPS = listOf( "!UW.yye1fxo", "!ITPb.qbhqo" )
         val EXCEPTIONS = mutableMapOf(
-            Pair("greatawakening", BoardExceptions(qtrips = QTRIPS)),
-            Pair("qresearch", BoardExceptions(qtrips = QTRIPS, qanonPosts = listOf("476325", "476806", "508699"))),
+            Pair("greatawakening", BoardExceptions(
+                    qtrips = QTRIPS
+            )),
+            Pair("qresearch", BoardExceptions(
+                    qtrips = QTRIPS,
+                    qanonPosts = listOf("476325", "476806")
+            )),
             Pair("thestorm", BoardExceptions(
                     qtrips = QTRIPS,
                     qstopTimes = mutableMapOf(
@@ -59,9 +68,35 @@ class InfChMirror(
         )
     }
 
-    fun InitializeThreads(board : String) {
+    fun InitializeThreads() {
         threads.clear()
 
+        // Gather threads from catalogs
+        File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
+            if(catalogFile.name.matches(Regex("^(catalog|threads).*")) && catalogFile.extension.startsWith("json")) {
+                val catalog = Gson().fromJson(catalogFile.readText(), Array<InfChThreadPage>::class.java)
+                catalog.forEach { page ->
+                    page.threads.forEach { thread ->
+                        if(threads.find { it.no == thread.no } == null) {
+                            threads.add(thread)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Gather threads from archives
+        File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
+            if (catalogFile.name.startsWith("archive") && catalogFile.extension.startsWith("html")) {
+                Regex("""$board/res/(\d+).html.*>([^<]*)<.*\"date\"\s*:\s*(\d+)""", RegexOption.MULTILINE).findAll(archiveFile.readText()).forEach { match ->
+                    if (threads.find { it.no == match.groups[1]!!.value.toLong() } == null) {
+                        threads.add(InfChThread(match.groups[1]!!.value.toLong(), com = match.groups[2]!!.value, time = match.groups[3]!!.value.toLong(), last_modified = match.groups[3]!!.value.toLong()))
+                    }
+                }
+            }
+        }
+
+        // Load orphaned threads
         when(board) {
             "cbts" -> {
                 // Add orphaned threads
@@ -85,9 +120,6 @@ class InfChMirror(
                 return
             }
 
-            val catalogURL = URL("https://8ch.net/$board/catalog.json")
-            val catalogFile = File(boardRoot + File.separator + "catalog.json")
-
             // Update catalog json if necessary
             try {
                 if (catalogFile.iterate(catalogURL.readBytesDelayed())) {
@@ -98,31 +130,53 @@ class InfChMirror(
                 return
             }
 
-            val catalog = Gson().fromJson(catalogFile.readText(), Array<InfChThreadPage>::class.java)
-            InitializeThreads(board)
-            catalog.forEach { page ->
-                page.threads.forEach { thread ->
-                    threads.add(thread)
+            // Update archive file
+            try {
+                if (archiveFile.iterate(archiveURL.readBytesDelayed())) {
+                    println("  Updated archive for $board")
                 }
+            } catch(e : FileNotFoundException) {
+                // No archive yet
+                //println("Unable to find archive for $board: $e")
             }
-            threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
-                if(Instant.ofEpochSecond(thread.time).isAfter(startTime.toInstant()) &&
-                        Instant.ofEpochSecond(thread.time).isBefore(stopTime.toInstant())) {
-                    val threadRoot = boardRoot + File.separator + thread.no
-                    if (MakeDirectory(threadRoot)) {
-                        val threadURL = URL("https://8ch.net/$board/res/${thread.no}.json")
-                        val threadFile = File(threadRoot + File.separator + "${thread.no}.json")
 
-                        // Update thread json if necessary
-                        try {
-                            if (threadFile.iterate(threadURL.readBytesDelayed())) {
-                                println("    Updated thread ${thread.no} (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.time), ZONEID).format(DATEFORMATTER)})")
-                                updatedThreads.add(thread)
+            InitializeThreads()
+
+            threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
+                val threadRoot = boardRoot + File.separator + thread.no
+                if (MakeDirectory(threadRoot)) {
+                    val threadURL = URL("https://8ch.net/$board/res/${thread.no}.json")
+                    val threadFile = File(threadRoot + File.separator + "${thread.no}.json")
+
+                    if(threadFile.exists()) {
+                        val postset = Gson().fromJson(threadFile.readText(), InfChPostSet::class.java)
+                        if (postset.posts.isNotEmpty()) {
+                            var threadStartTime = postset.posts.minBy { it.time }!!.time
+                            var threadStopTime = postset.posts.maxBy { it.last_modified }!!.last_modified
+
+                            if (threadStartTime == 0L) {
+                                threadStartTime = threadStopTime
                             }
-                        } catch (e: FileNotFoundException) {
-                            println("Unable to find thread ${thread.no} for $board, skipping.")
-                            return@forEachIndexed
+                            if (threadStopTime != 0L) {
+                                if (!(Instant.ofEpochSecond(threadStartTime).isAfter(startTime.toInstant()) &&
+                                                Instant.ofEpochSecond(threadStopTime).isBefore(stopTime.toInstant()))) {
+                                    return@forEachIndexed
+                                }
+                            } else {
+                                println("Unable to determine thread start/stop time: ${thread.no}")
+                            }
                         }
+                    }
+
+                    // Update thread json if necessary
+                    try {
+                        if (threadFile.iterate(threadURL.readBytesDelayed())) {
+                            println("    Updated thread ${thread.no} (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.last_modified), ZONEID).format(DATEFORMATTER)})")
+                            updatedThreads.add(thread)
+                        }
+                    } catch (e: FileNotFoundException) {
+                        println("Unable to find thread ${thread.no} for $board, skipping. ($threadURL)")
+                        return@forEachIndexed
                     }
                 }
             }
@@ -219,26 +273,10 @@ class InfChMirror(
     override fun MirrorSearch(params : SearchParameters) : List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
-        val threads = mutableListOf<InfChThread>()
 
         println(">> search: $this")
 
-        InitializeThreads(board)
-        SetupSearchParameters(params, EXCEPTIONS[board]!!)
-
-        // Gather threads from catalogs
-        File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
-            if(catalogFile.name.startsWith("catalog") && catalogFile.extension.startsWith("json")) {
-                val catalog = Gson().fromJson(catalogFile.readText(), Array<InfChThreadPage>::class.java)
-                catalog.forEach { page ->
-                    page.threads.forEach { thread ->
-                        if(threads.find { it.no == thread.no } == null) {
-                            threads.add(thread)
-                        }
-                    }
-                }
-            }
-        }
+        InitializeThreads()
 
         // Gather posts from threads
         threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
@@ -247,20 +285,35 @@ class InfChMirror(
                 println("  >> thread: ${thread.no}: ${index + 1} / ${threads.size} (% ${pct/10})")
             }
 
-            if (Instant.ofEpochSecond(thread.time).isAfter(startTime.toInstant()) &&
-                    Instant.ofEpochSecond(thread.time).isBefore(stopTime.toInstant())) {
-                val threadRoot = boardRoot + File.separator + thread.no
-                if (MakeDirectory(threadRoot)) {
-                    File(threadRoot).listFiles().sortedBy { -it.lastModified() }.forEach {
-                        if (it.name.startsWith(thread.no.toString()) && it.extension.startsWith("json")) {
-                            val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
-                            postset.posts.forEach { post ->
-                                val postEvent = PostEvent.fromInfChPost("anonsw", source, board, post)
-                                if(TestSearchParameters(params, EXCEPTIONS[board]!!, postEvent)) {
-                                    // Add to event list if it isn't already there
-                                    if(eventList.find { it.Link() == postEvent.Link() } == null) {
-                                        eventList.add(postEvent)
-                                    }
+            val threadRoot = boardRoot + File.separator + thread.no
+            if (MakeDirectory(threadRoot)) {
+                File(threadRoot).listFiles().sortedBy { -it.lastModified() }.forEach {
+                    if (it.name.startsWith(thread.no.toString()) && it.extension.startsWith("json")) {
+                        val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
+
+                        if (postset.posts.isNotEmpty()) {
+                            var threadStartTime = postset.posts.minBy { it.time }!!.time
+                            var threadStopTime = postset.posts.maxBy { it.last_modified }!!.last_modified
+
+                            if (threadStartTime == 0L) {
+                                threadStartTime = threadStopTime
+                            }
+                            if (threadStopTime != 0L) {
+                                if (!(Instant.ofEpochSecond(threadStartTime).isAfter(startTime.toInstant()) &&
+                                                Instant.ofEpochSecond(threadStopTime).isBefore(stopTime.toInstant()))) {
+                                    return@forEachIndexed
+                                }
+                            } else {
+                                println("Unable to determine thread start/stop time: ${thread.no}")
+                            }
+                        }
+
+                        postset.posts.forEach { post ->
+                            val postEvent = PostEvent.fromInfChPost("anonsw", source, board, post)
+                            if(params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
+                                // Add to event list if it isn't already there
+                                if(eventList.find { it.Link() == postEvent.Link() } == null) {
+                                    eventList.add(postEvent)
                                 }
                             }
                         }

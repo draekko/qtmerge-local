@@ -1,13 +1,15 @@
 package models.events
 
+import controllers.mirror.Mirror
 import models.mirror.TwitterArchiveTweet
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-data class TweetEvent(
-        val datasets : MutableList<String>,
-        val board : String,
+class TweetEvent(
+        datasets : MutableList<String>,
+        board : String,
+        source : Mirror.Source,
         val id_str : String,
         val text : String?,
         val created_at : String,
@@ -17,7 +19,7 @@ data class TweetEvent(
         val is_retweet : Boolean,
         val retweet_board: String,
         private val references : MutableList<String>
-) : Event() {
+) : Event(datasets, board, source) {
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
 
@@ -25,6 +27,7 @@ data class TweetEvent(
             val tweetEvent = TweetEvent(
                 mutableListOf(dataset),
                 board,
+                Mirror.Source.Twitter,
                 tweet.id_str,
                 tweet.text,
                 tweet.created_at,
@@ -40,13 +43,11 @@ data class TweetEvent(
         }
     }
 
-    override fun Datasets(): List<String> = datasets
-
     override fun Type(): String = "Tweet"
 
     override fun ID(): String = id_str
 
-    override fun Board(): String = board
+    override fun ThreadID() : String = in_reply_to_user_id_str?:""
 
     override fun Trip(): String = if(is_retweet) retweet_board else board
 

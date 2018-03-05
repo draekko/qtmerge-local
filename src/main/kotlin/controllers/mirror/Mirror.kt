@@ -1,7 +1,9 @@
 package controllers.mirror
 
 import QTMirror.Companion.ZONEID
+import com.sun.org.apache.xpath.internal.operations.Or
 import models.events.Event
+import models.events.TweetEvent
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -20,19 +22,87 @@ abstract class Mirror(
         Deep
     }
 
-    enum class Source {
-        FourChan,
-        InfChan,
-        Twitter,
-        LinkedData
+    enum class Source(val title : String, val url : String) {
+        FourChan("4Chan", "https://4chan.org/"),
+        InfChan("8ch", "https://8ch.net/"),
+        Twitter("Twitter", "https://twitter.com/"),
+        LinkedData("Link", "");
+
+        override fun toString(): String {
+            return title
+        }
+    }
+
+    enum class SearchOperator(val initialCondition : Boolean) {
+        And(true),
+        Or(false);
+
+        fun combine(op1 : Boolean, op2 : Boolean) : Boolean = if(this == And) op1 && op2 else op1 || op2
+    }
+
+    abstract class SearchOperand(
+        val name : String
+    ) {
+        abstract fun Search(exceptions: BoardExceptions, event: Event) : Boolean
+
+        class IDs(val ids : MutableList<String>) : SearchOperand("IDs") {
+            override fun Search(exceptions: BoardExceptions, event: Event) : Boolean = ids.contains(event.ID())
+        }
+
+        class Trips(val trips : MutableList<String>) : SearchOperand("Trips") {
+            override fun Search(exceptions: BoardExceptions, event: Event): Boolean = trips.contains(event.Trip())
+        }
+
+        class QT : SearchOperand("QT") {
+            override fun Search(exceptions: BoardExceptions, event: Event): Boolean {
+                if(event.Source() == Source.Twitter) {
+                    return true
+                }
+                if (exceptions.qstopTimes.containsKey(event.Trip())) {
+                    if (event.Timestamp().isAfter(exceptions.qstopTimes[event.Trip()]!!)) {
+                        return false
+                    }
+                }
+                if (exceptions.nonqPosts.isNotEmpty()) {
+                    if (exceptions.nonqPosts.contains(event.ID())) {
+                        return false
+                    }
+                }
+                if(exceptions.qtrips.isNotEmpty()) {
+                    if(exceptions.qtrips.contains(event.Trip())) {
+                        return true
+                    }
+                }
+                if(exceptions.qanonPosts.isNotEmpty()) {
+                    if(exceptions.qanonPosts.contains(event.ID())) {
+                        return true
+                    }
+                }
+
+                return false
+            }
+        }
+
+        class OP : SearchOperand("OP") {
+            override fun Search(exceptions: BoardExceptions, event: Event): Boolean = event.ID() == event.ThreadID()
+        }
+
+        class Content(val regex: Regex) : SearchOperand("Content") {
+            override fun Search(exceptions: BoardExceptions, event: Event): Boolean = regex.find(event.Text()) != null
+        }
+
+        data class Condition (
+                val operator : SearchOperator,
+                val operands : List<SearchOperand>
+        ) : SearchOperand("Condition") {
+            override fun Search(exceptions: BoardExceptions, event: Event): Boolean =
+                    operands.foldRight(operator.initialCondition, { op, acc -> operator.combine(acc, op.Search(exceptions, event)) })
+        }
     }
 
     data class SearchParameters(
-        val trips : MutableList<String> = mutableListOf(),
-        val ids : MutableList<String> = mutableListOf(),
-        val content : Regex? = null,
-        val referenceDepth : ReferenceDepth = ReferenceDepth.None,
-        val onlyQT : Boolean = true
+        val condition: SearchOperand = SearchOperand.QT(),
+        val referenceDepth : ReferenceDepth = ReferenceDepth.None
     )
 
     data class BoardExceptions(
@@ -73,55 +143,6 @@ abstract class Mirror(
         val dateTime = connection.lastModified
         connection.disconnect()
         return ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTime), ZONEID)
-    }
-
-    fun SetupSearchParameters(params: SearchParameters, exceptions : BoardExceptions) {
-        // Set trips/ids if onlyQT flag set
-        if(params.onlyQT) {
-            params.trips.clear()
-            params.trips.addAll(exceptions.qtrips)
-
-            params.ids.clear()
-            if(exceptions.qanonPosts.isNotEmpty()) {
-                params.ids.addAll(exceptions.qanonPosts)
-            }
-        }
-    }
-
-    fun TestSearchParameters(params: SearchParameters, exceptions: BoardExceptions, event : Event) : Boolean {
-        var testPasses = false
-
-        // Search on trip
-        if(!testPasses && params.trips.isNotEmpty()) {
-            testPasses = params.trips.contains(event.Trip())
-        }
-
-        // Search on post id
-        if(!testPasses && params.ids.isNotEmpty()) {
-            testPasses = params.ids.contains(event.ID())
-        }
-
-        // Handle exceptions
-        if(testPasses && params.onlyQT) {
-            if (exceptions.nonqPosts.isNotEmpty()) {
-                if (exceptions.nonqPosts.contains(event.ID())) {
-                    testPasses = false
-                }
-            }
-            if (exceptions.qstopTimes.containsKey(event.Trip())) {
-                if (event.Timestamp().isAfter(exceptions.qstopTimes[event.Trip()]!!)) {
-                    testPasses = false
-                }
-            }
-        }
-
-        // Search on content
-        if(!testPasses && (params.content != null)) {
-            testPasses = (params.content.find(event.Text()) != null)
-        }
-
-
-        return testPasses
     }
 
     override fun toString(): String {

@@ -21,111 +21,113 @@ class QTMerge(
     var mirrorLabel : String = "2018-02-15",
     var outputDirectory : String = System.getProperty("user.dir") + File.separator + "anonsw.github.io" + File.separator + "qtmerge"
 ) {
-    var mirrors : MutableList<Mirror> = arrayListOf()
+    var mirrors : MutableList<MirrorConfig> = arrayListOf()
     var events : MutableList<Event> = arrayListOf()
+    var threads : MutableList<Event> = arrayListOf()
 
     companion object {
         val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.3-1"
+        val VERSION = "2018.3-2"
         val DATADIR = System.getProperty("user.dir") + File.separator + "data"
         val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
         val FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
     }
 
+    class MirrorConfig(
+        val mirror : Mirror,
+        val primarySource : Boolean
+    )
+
     init {
-        LoadSources()
+        LoadMirrors()
+        LoadEvents()
+        LoadCatalog()
         File(outputDirectory).mkdirs()
+
+        println("Total Events: ${events.size}")
+        println("Total Threads: ${threads.size}")
     }
 
-    fun CalcQStats() {
-        val days : MutableMap<Long, Long> = hashMapOf()
-        var lastTime : ZonedDateTime? = null
-        var totalPosts: Long = 0
+    fun LoadMirrors() {
+        val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
+        mirrors.addAll(listOf(
+            // Twitter Archive
+            MirrorConfig(TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", STARTTIME), true),
 
-        events.forEach {
-            if(it.Type() == "Post") {
-                totalPosts++
-                if(lastTime == null) {
-                    lastTime = it.Timestamp()
-                } else {
-                    val delta = ChronoUnit.DAYS.between(lastTime, it.Timestamp())
-                    if(days.contains(delta)) {
-                        days[delta] = days[delta]!! + 1
-                    } else {
-                        days[delta] = 1
-                    }
-                    lastTime = it.Timestamp()
+            // Anonsw
+            MirrorConfig(FourChanMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, "greatawakening", STARTTIME), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, "qresearch", STARTTIME), true),
+
+            // QCodeFag
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QCodeFagMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME), false),
+
+            // QAnonMap
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME), false),
+            MirrorConfig(QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts", STARTTIME), false)
+        ))
+    }
+
+    fun LoadEvents() {
+        mirrors.forEach {
+            if (it.primarySource) {
+                events.addAll(it.mirror.MirrorSearch())
+            } else {
+                it.mirror.MirrorSearch().forEach { event ->
+                    MergeEvent(events, event, it.mirror.dataset)
                 }
             }
         }
 
-        println("Total QPosts: $totalPosts")
-        days.toSortedMap().forEach {
-            println("${it.key} ${it.value}")
-        }
-    }
-
-    fun LoadSources() {
-        val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
-        events.addAll(TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", STARTTIME).MirrorSearch())
-        events.addAll(FourChanMirror(mirrorDirectory, "pol", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(mirrorDirectory, "pol", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(mirrorDirectory, "cbts", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(mirrorDirectory, "thestorm", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(mirrorDirectory, "greatawakening", STARTTIME).MirrorSearch())
-        events.addAll(InfChMirror(mirrorDirectory, "qresearch", STARTTIME).MirrorSearch())
-
-        // Capture qcodefag's data
-        QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-        QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-        QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-        QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-        QCodeFagMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-        QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-        QCodeFagMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qcodefag") }
-
-        // Capture qanonmap's data
-        QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-        QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts", STARTTIME).MirrorSearch()
-                .forEach { post -> MergePostEvent(post as PostEvent, "qanonmap") }
-
         events.sortBy { it.Timestamp().toEpochSecond() }
 
-        // Initialize base class due to Gson ignoring Kotlin default constructor values, also enumerate id's
+        // Enumerate id's
         events.forEachIndexed { index, event ->
             event.UID = index.toString()
         }
-
-        println("Total Events: ${events.size}")
     }
 
-    fun MergePostEvent(post: PostEvent, dataset : String) {
-        val event = events.find { it.Board() == post.Board() && it.ID() == post.ID() && (it.Link() == post.Link() || it.Timestamp() == post.Timestamp()) }
-        if(event == null) {
-            events.add(post)
+    fun LoadCatalog() {
+        mirrors.forEach {
+            if(it.primarySource) {
+                threads.addAll(it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.OP())))
+            } else {
+                it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.OP())).forEach { event ->
+                    MergeEvent(threads, event, it.mirror.dataset)
+                }
+            }
+        }
+
+        threads.sortBy { -it.Timestamp().toEpochSecond() }
+
+        // Enumerate id's
+        threads.forEachIndexed { index, thread ->
+            thread.UID = index.toString()
+        }
+    }
+
+    fun MergeEvent(eventList: MutableList<Event>, event: Event, dataset : String) {
+        val existingEvent = eventList.find { it.Board() == event.Board() && it.ID() == event.ID() && (it.Link() == event.Link() || it.Timestamp() == event.Timestamp()) }
+        if(existingEvent == null) {
+            eventList.add(event)
         } else {
-            (event as PostEvent).datasets.add(dataset)
+            existingEvent.datasets.add(dataset)
         }
     }
 
@@ -175,6 +177,7 @@ class QTMerge(
             """.trimMargin() }.joinToString("")
         dsout.append(MakeHeader("Datasets", "margin-top:0;"))
         dsout.append("""
+            |   <a href="./">&Lt; qtmerge</a>
             |   <h2>Raw Sources</h2>
             |   <p>The raw source data for posts and tweets come originally from these websites:</p>
             |   <ul>
@@ -239,11 +242,11 @@ class QTMerge(
             |           <a href="https://trumptwitterarchive.com/">twitterarchive</a> |
             |           $qmaps
             |       </div>
-            |       <div class="wip">
-            |           <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Catalog</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
+            |       <div class="derived">
+            |           <a href="catalog.html">Thread Catalog</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
             |       <div id="donate">
-            |           <div style="display:inline-block;line-height:1.75em;">Thank you<br>
+            |           <div style="display:inline-block;line-height:1.75em;">Thank you for your support!<br>
             |               bitcoin:<span class="bitcoin-address"><a href="bitcoin:1E6PNKbB5g5V9XF8y8XmmXaXGmQuW3r2aH">1E6PNKbB5g5V9XF8y8XmmXaXGmQuW3r2aH</a></span>
             |           </div>
             |           <a href="../images/bitcoin-qrcode.png"><img src="../images/bitcoin-qrcode.png"></a>
@@ -311,10 +314,26 @@ class QTMerge(
         dsout.appendln("</table></body></html>")
         dsout.close()
 
-        val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
-        qcat.append(MakeHeader("Thread Catalog", "margin-top: 0;"))
-        qcat.append("</body></html>")
-        qcat.close()
+        if(threads.size > 0) {
+            val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
+            qcat.append(MakeHeader("Thread Catalog", "margin-top: 0;"))
+            qcat.append("<a href=\"./\">&Lt; qtmerge</a><br><p>This catalog is a work in progress.")
+
+            qcat.append("<table id=\"catalog\"><tr><th>Date</th><th>Source</th><th>Board</th><th>Link</th><th>Subject</th></tr>")
+            var lastDate = threads[0].Timestamp()
+            threads.forEach {
+                var hr = ""
+                if (lastDate.dayOfMonth != it.Timestamp().dayOfMonth) {
+                    hr = " class=\"first-for-day\""
+                    lastDate = it.Timestamp()
+                }
+                qcat.append("""
+                    |<tr$hr><td>${it.Timestamp().format(FORMATTER)}</td><td>${it.Source()}</td><td>${it.Board()}</td><td><a href="${it.Link()}">${it.ID()}</a></td><td>${it.Subject()}</td></tr>
+                    """.trimMargin())
+            }
+            qcat.append("</table></body></html>")
+            qcat.close()
+        }
     }
 
     fun MakeEventRow(event: Event, count : Int) : String {
@@ -376,13 +395,9 @@ class QTMerge(
         })
         val capsRegex = Regex("""\b((?<!@)[A-Z]{2,})+\b""")
         text = text.replace(capsRegex, { matchResult ->
-            //if(Abbreviations.dict.containsKey(matchResult.groupValues[1])) {
-            //  matchResult.groupValues[1]
-            //} else {
             "<span class=\"caps\">${matchResult.groupValues[1]}</span>"
-            //}
         })
-        val abbrRegex = Regex("""\b(${Abbreviations.dict.keys.joinToString("|")})\b""")
+        val abbrRegex = Regex("""\b(${Abbreviations.dict.keys.joinToString("|")})\b""", RegexOption.MULTILINE)
         text = text.replace(abbrRegex, { matchResult ->
             "<span class=\"abbr\" title=\"${Abbreviations.dict[matchResult.groupValues[1]]}\">${matchResult.groupValues[1]}</span>"
         })

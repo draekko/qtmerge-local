@@ -418,7 +418,8 @@ class FourChanMirror(
                         }
                     } catch (e: FileNotFoundException) {
                         println("Unable to find thread for $board: $e")
-                        return
+                    } catch (e: IOException) {
+                        println("Unable to download thread for $board: $e")
                     }
                 }
             }
@@ -509,8 +510,6 @@ class FourChanMirror(
 
         println(">> search: $this")
 
-        SetupSearchParameters(params, EXCEPTIONS[board]!!)
-
         threads.sortedBy { -it.toLong() }.forEachIndexed { index, thread ->
             val threadRoot = boardRoot + File.separator + thread
             val threadFile = File(threadRoot + File.separator + "$thread.json")
@@ -528,7 +527,7 @@ class FourChanMirror(
                 val threadMap : Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
 
                 val threadPostEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadMap[thread]!!.op)
-                if (TestSearchParameters(params, EXCEPTIONS[board]!!, threadPostEvent)) {
+                if (params.condition.Search(EXCEPTIONS[board]!!, threadPostEvent)) {
                     // Add to event list if it isn't already there
                     if (eventList.find { it.Link() == threadPostEvent.Link() } == null) {
                         eventList.add(threadPostEvent)
@@ -544,7 +543,7 @@ class FourChanMirror(
                         val post = threadMap[thread]!!.posts!![it]!!
 
                         val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, post)
-                        if (TestSearchParameters(params, EXCEPTIONS[board]!!, postEvent)) {
+                        if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
                             // Add to event list if it isn't already there
                             if (eventList.find { it.Link() == postEvent.Link() } == null) {
                                 eventList.add(postEvent)
