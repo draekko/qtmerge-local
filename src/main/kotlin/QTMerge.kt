@@ -32,6 +32,7 @@ class QTMerge(
         val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
         val FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
+        val ROLLBACKDAYS = 111L
     }
 
     class MirrorConfig(
@@ -246,6 +247,7 @@ class QTMerge(
             |           <a href="catalog.html">Thread Catalog</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
             |       <div class="menu">
+            |           Post Time Offset (days): <input id="postedOffset" type="text" value="111" disabled="disabled">
             |           <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
             |       </div>
             |   </div>
@@ -355,7 +357,7 @@ class QTMerge(
 
         // TODO: need to show subject/name/email...Q uses these in peculiar ways?
         out.appendln("  <tr class=\"event$noconfclass\" id=\"${event.UID}\" data-timestamp='${MakeJSONTimestamp(event.Timestamp())}'$confattr>")
-        out.appendln("      <td class=\"e-timestamp\">${event.Timestamp().format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
+        out.appendln("      <td class=\"e-timestamp\">Posted: ${event.Timestamp().format(FORMATTER)}<br>Offset: ${event.Timestamp().plusDays(ROLLBACKDAYS).format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-trip\">$trip${if(event.Board().isNotEmpty()) "<br><span class=\"board\">(${event.Board()})</span>" else ""}<br><span class=\"datasets\">[$datasets]</span></td>")
         out.appendln("      <td class=\"e-type\"><a href=\"${event.Link()}\">${event.Type()}</a></td>")
         var images = ""
@@ -395,6 +397,7 @@ class QTMerge(
         text = text.replace(abbrRegex, { matchResult ->
             "<span class=\"abbr\" title=\"${Abbreviations.dict[matchResult.groupValues[1]]}\">${matchResult.groupValues[1]}</span>"
         })
+        text = "<div class=\"e-text-line\"><span>" + text.split("\n").joinToString("</span></div><div class=\"e-text-line\"><span>") + "</span></div>"
         // TODO: known acronyms
         out.appendln("        <td class=\"e-text\">$images$text</td>")
         out.appendln("    </tr>")
