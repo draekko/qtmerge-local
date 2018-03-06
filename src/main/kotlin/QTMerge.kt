@@ -335,7 +335,6 @@ class QTMerge(
     fun MakeEventRow(event: Event, count : Int) : String {
         val out = StringBuilder()
         val isQPost = event.Type() == "Post"
-        val ref = Regex(""">>(\d+)""")
         var trip = event.Trip()
         var datasets = event.Datasets().joinToString(",<br>")
         var noconfclass = ""
@@ -354,6 +353,7 @@ class QTMerge(
                 }
             }
         }
+
 
         // TODO: need to show subject/name/email...Q uses these in peculiar ways?
         out.appendln("  <tr class=\"event$noconfclass\" id=\"${event.UID}\" data-timestamp='${MakeJSONTimestamp(event.Timestamp())}'$confattr>")
@@ -377,13 +377,14 @@ class QTMerge(
         if(images.isNotEmpty() && event.Text().isNotEmpty()) {
             images += "<br>"
         }
-        var text = event.Text() //escapeHTML(event.Text())
+        var text = event.Text()
+        // TODO: fix cross bread references
         var refurl = event.Link().replaceAfter("#", "")
         if(!refurl.endsWith("#")) {
             refurl += "#"
         }
-        text = text.replace(ref, { match ->
-            "<a href=\"$refurl${match.groups[1]!!.value}\">${match.value}</a>"
+        text = text.replace(Regex(""">>(\d+)"""), { match ->
+            "<a href=\"$refurl${match.groups[1]!!.value}\">&gt;&gt;${match.groupValues[1]}</a>"
         })
         val boxRegex = Regex("""\[([^\]]+)\]""")
         text = text.replace(boxRegex, { matchResult ->
@@ -398,9 +399,15 @@ class QTMerge(
             "<span class=\"abbr\" title=\"${Abbreviations.dict[matchResult.groupValues[1]]}\">${matchResult.groupValues[1]}</span>"
         })
         text = "<div class=\"e-text-line\"><span>" + text.split("\n").joinToString("</span></div><div class=\"e-text-line\"><span>") + "</span></div>"
-        // TODO: known acronyms
         out.appendln("        <td class=\"e-text\">$images$text</td>")
         out.appendln("    </tr>")
+
+        /*
+        if(event.ID() == "567502") {
+            println(event.Text())
+            println(text)
+        }
+        */
 
         return out.toString()
     }
