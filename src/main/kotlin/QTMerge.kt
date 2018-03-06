@@ -27,7 +27,7 @@ class QTMerge(
 
     companion object {
         val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.3-2"
+        val VERSION = "2018.3-3"
         val DATADIR = System.getProperty("user.dir") + File.separator + "data"
         val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
