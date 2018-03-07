@@ -10,6 +10,7 @@ class TweetEvent(
         datasets : MutableList<String>,
         board : String,
         source : Mirror.Source,
+        mirrorFile : String,
         val id_str : String,
         val text : String?,
         val created_at : String,
@@ -19,15 +20,16 @@ class TweetEvent(
         val is_retweet : Boolean,
         val retweet_board: String,
         private val references : MutableList<String>
-) : Event(datasets, board, source) {
+) : Event(datasets, board, source, mirrorFile) {
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
 
-        fun fromTwitterArchiveTweet(dataset : String, board : String, tweet: TwitterArchiveTweet) : TweetEvent {
+        fun fromTwitterArchiveTweet(dataset : String, board : String, mirrorFile: String, tweet: TwitterArchiveTweet) : TweetEvent {
             val tweetEvent = TweetEvent(
                 mutableListOf(dataset),
                 board,
                 Mirror.Source.Twitter,
+                mirrorFile,
                 tweet.id_str,
                 tweet.text,
                 tweet.created_at,
@@ -59,8 +61,8 @@ class TweetEvent(
 
     override fun References(): List<String> = references
 
-    override fun FindReferences() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun FindReferences() : List<Event> {
+        return emptyList()
     }
 
     override fun RawTimestamp(): String {

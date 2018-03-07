@@ -13,14 +13,14 @@ import java.net.URL
 import java.time.Instant
 import java.time.ZonedDateTime
 
-class QCodeFagMirror(
+class QCodeFagNetMirror(
         mirrorDirectory : String,
         board : String,
         source : Source,
         val boardFileID: String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
-) : Mirror(mirrorDirectory, board, source, "qcodefag") {
+) : Mirror(mirrorDirectory, board, source, "qcodefagnet") {
     var threads: MutableList<InfChThread> = mutableListOf()
     val updatedThreads: MutableList<InfChThread> = mutableListOf()
     var mirrorRoot = mirrorDirectory + File.separator + dataset
@@ -43,9 +43,8 @@ class QCodeFagMirror(
                 return
             }
 
-            //val catalogURL = URL("http://qcodefag.github.io/data/$board.json")
-            //val catalogURL = URL("http://qanonposts.com/data/$board.json")
-            val catalogURL = URL("https://github.com/QCodefag/QCodefag.github.io/raw/master/data/$boardFileID.json")
+            // board name : _allQPosts
+            val catalogURL = URL("https://github.com/QCodeFagNet/SFW.ChanScraper/raw/master/SFW.ChanScraper/json/$boardFileID.json")
             val catalogFile = File(boardRoot + File.separator + "$boardFileID.json")
 
             // Update catalog json if necessary

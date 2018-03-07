@@ -41,6 +41,7 @@ class FourChanMirror(
                 Pair("pol", BoardExceptions(
                         orphanThreads = listOf(
                                 // TODO: threads between Q first post and CBTS #0
+                                "146981635", "147075091", "147075091", "147146601", "147433975",
                                 // I Hope Trump Isn't Being Baited (CBTS #0)
                                 "147505376",
                                 // CBTS # (note, there are a good number of other duped breads that were left out because they didn't appear to have any significant posts other than OPs)
@@ -505,57 +506,60 @@ class FourChanMirror(
     }
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
-        val eventList: MutableList<Event> = arrayListOf()
+        val eventList: MutableMap<String, Event> = mutableMapOf()
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
 
         println(">> search: $this")
 
-        threads.sortedBy { -it.toLong() }.forEachIndexed { index, thread ->
+        threads.sortedBy { it.toLong() }.forEachIndexed { index, thread ->
             val threadRoot = boardRoot + File.separator + thread
-            val threadFile = File(threadRoot + File.separator + "$thread.json")
             val threadUpdated = updatedThreads.contains(thread)
 
-            // Check post files and references
-            if(threadFile.exists()) {
-                try {
-                    val error : Map<String, String> = Gson().fromJson(threadFile.readText(), object : TypeToken<Map<String, String>>() {}.type)
-                    if(error.containsKey("error")) {
-                        return@forEachIndexed
+            File(threadRoot).listFiles().sortedBy { -it.lastModified() }.forEach { threadFile ->
+                if (threadFile.name.startsWith(thread) && threadFile.extension.startsWith("json")) {
+                    // Check post files and references
+                    try {
+                        val error: Map<String, String> = Gson().fromJson(threadFile.readText(), object : TypeToken<Map<String, String>>() {}.type)
+                        if (error.containsKey("error")) {
+                            return@forEachIndexed
+                        }
+                    } catch (e: Exception) { /* all ok, not an error */
                     }
-                } catch(e : Exception) { /* all ok, not an error */ }
-                val listType = object : TypeToken<Map<String, FourChanThread>>() {}.type
-                val threadMap : Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
+                    val listType = object : TypeToken<Map<String, FourChanThread>>() {}.type
+                    val threadMap: Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
 
-                val threadPostEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadMap[thread]!!.op)
-                if (params.condition.Search(EXCEPTIONS[board]!!, threadPostEvent)) {
-                    // Add to event list if it isn't already there
-                    if (eventList.find { it.Link() == threadPostEvent.Link() } == null) {
-                        eventList.add(threadPostEvent)
+                    val threadPostEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, threadMap[thread]!!.op)
+                    if (params.condition.Search(EXCEPTIONS[board]!!, threadPostEvent)) {
+                        // Add to event list if it isn't already there
+                        if (!eventList.containsKey(threadPostEvent.Link())) {
+                            eventList[threadPostEvent.Link()] = threadPostEvent
+                        }
                     }
-                }
-                val pct = Math.round(index.toFloat() / threads.size * 1000)
-                if(pct.rem(100) == 0) {
-                    println("  >> thread: $thread: ${index + 1} / ${threads.size} (% ${Math.round(index.toFloat() / threads.size * 100)})")
-                }
 
-                if(threadMap[thread]!!.posts != null) {
-                    threadMap[thread]!!.posts!!.keys.forEach {
-                        val post = threadMap[thread]!!.posts!![it]!!
+                    if (threadMap[thread]!!.posts != null) {
+                        threadMap[thread]!!.posts!!.keys.forEach {
+                            val post = threadMap[thread]!!.posts!![it]!!
 
-                        val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, post)
-                        if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
-                            // Add to event list if it isn't already there
-                            if (eventList.find { it.Link() == postEvent.Link() } == null) {
-                                eventList.add(postEvent)
+                            val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, post)
+                            if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
+                                // Add to event list if it isn't already there
+                                if (!eventList.containsKey(postEvent.ID())) {
+                                    eventList[postEvent.ID()] = postEvent
+                                }
                             }
                         }
                     }
                 }
-            } else {
-                println("  >> thread: $thread: unable to find thread file: $threadFile")
+            }
+
+            val pct = Math.round(index.toFloat() / threads.size * 1000)
+            if (pct.rem(100) == 0) {
+                println("  >> thread: $thread: ${index + 1} / ${threads.size} (% ${Math.round(index.toFloat() / threads.size * 100)})")
             }
         }
 
-        return eventList
+        println("  >> Found ${eventList.size} events.")
+
+        return eventList.values.toList()
     }
 }

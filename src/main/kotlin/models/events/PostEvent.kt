@@ -15,6 +15,7 @@ class PostEvent(
         datasets : MutableList<String>,
         board : String,
         source : Mirror.Source,
+        mirrorFile: String,
         var id : String,
         var userId : String?,
         var timestamp : Long,
@@ -31,7 +32,8 @@ class PostEvent(
         var inGraphics: MutableList<String>,
         private var references : MutableList<String>,
         private var referenceID : String
-) : Event(datasets, board, source) {
+) : Event(datasets, board, source, mirrorFile) {
+
     data class PostEventImage(
         var url : String?,
         var filename : String?
@@ -93,13 +95,14 @@ class PostEvent(
 
         fun makeReferenceID(link : String) = link //DatatypeConverter.printHexBinary(MD5.digest(link.toByteArray()))
 
-        fun fromInfChPost(dataset : String, source: Mirror.Source, board: String, infChPost: InfChPost) : PostEvent {
+        fun fromInfChPost(dataset : String, source: Mirror.Source, board: String, mirrorFile: String, infChPost: InfChPost) : PostEvent {
             val threadId = if(infChPost.resto == 0L) infChPost.no else infChPost.resto
             val link = "https://8ch.net/$board/res/$threadId.html#${infChPost.no}"
             val postEvent = PostEvent(
                     mutableListOf(dataset),
                     board,
                     source,
+                    mirrorFile,
                     infChPost.no.toString(),
                     infChPost.id,
                     infChPost.time,
@@ -139,12 +142,13 @@ class PostEvent(
             return postEvent
         }
 
-        fun fromFourChanPost(dataset: String, source: Mirror.Source, board: String, fourChanPost: FourChanPost) : PostEvent {
+        fun fromFourChanPost(dataset: String, source: Mirror.Source, board: String, mirrorFile: String, fourChanPost: FourChanPost) : PostEvent {
             val link = "https://archive.4plebs.org/$board/thread/${fourChanPost.thread_num}/#${fourChanPost.num}"
             val postEvent = PostEvent(
                     mutableListOf(dataset),
                     board,
                     source,
+                    mirrorFile,
                     fourChanPost.num,
                     fourChanPost.poster_hash,
                     fourChanPost.timestamp,
@@ -180,11 +184,12 @@ class PostEvent(
             return postEvent
         }
 
-        fun fromQCodeFagPost(dataset : String, source: Mirror.Source, board : String, qCodeFagPost: QCodeFagPost) : PostEvent {
+        fun fromQCodeFagPost(dataset : String, source: Mirror.Source, board : String, mirrorFile: String, qCodeFagPost: QCodeFagPost) : PostEvent {
             val postEvent = PostEvent(
                     mutableListOf(dataset),
                     board,
                     source,
+                    mirrorFile,
                     qCodeFagPost.id,
                     qCodeFagPost.userId,
                     qCodeFagPost.timestamp,
@@ -228,7 +233,9 @@ class PostEvent(
 
     }
 
-    override fun FindReferences() {
+    // Example with both good and bad ref link in data:
+    // "<p class=\"body-line ltr \"><a onclick=\"highlightReply('567454', event);\" href=\"\/qresearch\/res\/567140.html#567454\">&gt;&gt;567454<\/a><\/p><p class=\"body-line ltr \">These peo&gt;&gt;567493<\/p><p class=\"body-line ltr \">ple are stupid.<\/p><p class=\"body-line ltr \">Wait for Russia\/China reports.<\/p><p class=\"body-line ltr \">Sabotage.<\/p><p class=\"body-line ltr \">Investigation.<\/p><p class=\"body-line ltr \">Strike 99999999.<\/p><p class=\"body-line empty \"><\/p><p class=\"body-line ltr \">Q<\/p>"
+    override fun FindReferences() : List<Event> {
         references.addAll(postReferences.map { it.ReferenceID() })
 
         // Find post references
@@ -239,6 +246,8 @@ class PostEvent(
                 }
             }
         }
+
+        return emptyList()
     }
 
     override fun Type(): String = "Post"

@@ -27,7 +27,7 @@ class QTMerge(
 
     companion object {
         val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.3-3"
+        val VERSION = "2018.3-4"
         val DATADIR = System.getProperty("user.dir") + File.separator + "data"
         val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
         val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
@@ -128,6 +128,14 @@ class QTMerge(
         if(existingEvent == null) {
             eventList.add(event)
         } else {
+            // TODO: also note any differences from existing event
+            //      ThreadID
+            //      Link
+            //      Timestamp
+            //      Name
+            //      Trip
+            //      Subject
+            //      Text
             existingEvent.datasets.add(dataset)
         }
     }
@@ -144,10 +152,11 @@ class QTMerge(
         |   <head>
         |       <meta charset="utf-8">
         |       <title>qtmerge v$VERSION${if(title.isNotEmpty()) " $title" else ""}</title>
-        |       <link rel="stylesheet" href="../styles/reset.css">
-        |       <link rel="stylesheet" href="../styles/screen.css">
-        |       <link rel="stylesheet" href="qtmerge.css">
-        |       <link rel="stylesheet" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
+        |       <link rel="stylesheet" type="text/css" href="../styles/reset.css">
+        |       <link rel="stylesheet" type="text/css" href="../styles/screen.css" media="screen">
+        |       <link rel="stylesheet" type="text/css" href="../styles/print.css" media="print">
+        |       <link rel="stylesheet" type="text/css" href="qtmerge.css">
+        |       <link rel="stylesheet" type="text/css" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
         |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
         |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
         |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
@@ -234,7 +243,8 @@ class QTMerge(
         out.append(MakeHeader())
         out.append("""
             |   <div id="header">
-            |       <p class="timestamp">Version: $VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZONEID).format(FORMATTER)}</p>
+            |       <div class="timestamp">qtmerge v$VERSION &mdash; Last Updated: ${ZonedDateTime.now(ZONEID).format(FORMATTER)}</div>
+            |       <div class="settings">Post Time Offset (days): <span id="postedOffsetPrint">111</span></div>
             |       <div class="datasets">
             |           <b><a href="datasets.html">Datasets</a>:</b>
             |           <a href="https://anonsw.github.io/">anonsw</a> |
@@ -247,19 +257,25 @@ class QTMerge(
             |           <a href="catalog.html">Thread Catalog</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
             |       <div class="menu">
-            |           Post Time Offset (days): <input id="postedOffset" type="text" value="111" disabled="disabled">
-            |           <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
+            |          <form>
+            |              Post Time Offset (days): <input id="postedOffset" type="text" value="111" disabled="disabled">
+            |              <input type="button" value="Print..." onclick="window.print();">
+            |              <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
+            |          </form>
             |       </div>
             |   </div>
             |""".trimMargin())
 
         out.append("""<table id="events">
+            |   <thead>
             |   <tr>
             |       <th>Time (Count)<br>[ID]</th>
             |       <th>Trip (Board)<br>[Datasets]</th>
             |       <th>Link</th>
             |       <th>Text</th>
             |   </tr>
+            |   </thead>
+            |   <tbody>
             |""".trimMargin())
 
         var qpostCount = events.count { it.Type() == "Post" } + 1
@@ -271,7 +287,7 @@ class QTMerge(
                     qpostCount--
                     isQPost = true
                     if(event.Trip() == "Anonymous") {
-                        dsout.appendln(MakeEventRow(event, qpostCount))
+                        dsout.appendln(MakeEventRow(event, qpostCount, false))
                     }
                 }
                 "Tweet" -> { tweetCount--; isQPost = false }
@@ -279,18 +295,24 @@ class QTMerge(
             out.appendln(MakeEventRow(event, if(isQPost) qpostCount else tweetCount))
         }
 
-        out.appendln("</table>")
+        out.appendln("</tbody></table>")
         out.appendln("""
             |<div id="scratchPad">
             |<div id="scratchHeader">
+            |<div class="settings">Post Time Offset (days): <span id="postedOffsetPrintScratch">111</span></div>
             |<div id="scratchActions">
-            |<input type="button" value="Clear Scratch Pad" onclick="removeScratchEvents();">
+            |<form>
+            |<input type="button" value="Clear" onclick="removeScratchEvents();">
+            |<input id="printScratchPadButton" type="button" value="Print..." onclick="printScratchPad();" disabled="disabled">
+            |<input id="toggleHighlightingCheckbox" type="checkbox" onclick="toggleHighlighting();" checked="checked"> <label for="toggleHighlightingCheckbox">Auto word highlighting</label>
             |<!-- input type="button" value="Generate Map" disabled="disabled" -->
+            |</form>
             |</div>
             |<p id="scratchVersion">qtmerge v$VERSION</p>
             |<p id="scratchTimestamp"></p>
             |</div>
             |<table id="scratchTable">
+            |   <thead>
             |   <tr>
             |       <th>#</th>
             |       <th>Time (Count)<br>[ID]</th>
@@ -298,6 +320,8 @@ class QTMerge(
             |       <th>Link</th>
             |       <th>Text</th>
             |   </tr>
+            |   </thead>
+            |   <tbody></tbody>
             |</table>
             |<div id="scratchTimes"></div>
             |</div>
@@ -330,9 +354,11 @@ class QTMerge(
             qcat.append("</table></body></html>")
             qcat.close()
         }
+
+        // TODO: abbreviations page
     }
 
-    fun MakeEventRow(event: Event, count : Int) : String {
+    fun MakeEventRow(event: Event, count : Int, emitOffset: Boolean = true) : String {
         val out = StringBuilder()
         val isQPost = event.Type() == "Post"
         var trip = event.Trip()
@@ -357,7 +383,7 @@ class QTMerge(
 
         // TODO: need to show subject/name/email...Q uses these in peculiar ways?
         out.appendln("  <tr class=\"event$noconfclass\" id=\"${event.UID}\" data-timestamp='${MakeJSONTimestamp(event.Timestamp())}'$confattr>")
-        out.appendln("      <td class=\"e-timestamp\">Posted: ${event.Timestamp().format(FORMATTER)}<br>Offset: ${event.Timestamp().plusDays(ROLLBACKDAYS).format(FORMATTER)}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
+        out.appendln("      <td class=\"e-timestamp\">Posted: ${event.Timestamp().format(FORMATTER)}${if(emitOffset) "<br>Offset: ${event.Timestamp().plusDays(ROLLBACKDAYS).format(FORMATTER)}" else ""}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-trip\">$trip${if(event.Board().isNotEmpty()) "<br><span class=\"board\">(${event.Board()})</span>" else ""}<br><span class=\"datasets\">[$datasets]</span></td>")
         out.appendln("      <td class=\"e-type\"><a href=\"${event.Link()}\">${event.Type()}</a></td>")
         var images = ""

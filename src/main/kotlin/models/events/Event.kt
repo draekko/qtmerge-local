@@ -6,13 +6,14 @@ import java.time.ZonedDateTime
 import javax.xml.bind.DatatypeConverter
 
 abstract class Event(
-        @Transient var datasets : MutableList<String> = mutableListOf(),
-        @Transient var board : String,
-        @Transient var source : Mirror.Source,
-        @Transient var UID : String = ""
+        var datasets : MutableList<String> = mutableListOf(),
+        var board : String,
+        var source : Mirror.Source,
+        var mirrorFile : String,
+        var UID : String = ""
 ) {
     companion object {
-        @Transient val MD5: MessageDigest = MessageDigest.getInstance("MD5")
+        val MD5: MessageDigest = MessageDigest.getInstance("MD5")
     }
 
     fun Datasets(): List<String> = datasets
@@ -24,7 +25,7 @@ abstract class Event(
     abstract fun ThreadID() : String
     abstract fun Trip() : String
     abstract fun Link() : String
-    abstract fun FindReferences()
+    abstract fun FindReferences() : List<Event>
     abstract fun ReferenceID() : String
     abstract fun References() : List<String>
     abstract fun Timestamp() : ZonedDateTime

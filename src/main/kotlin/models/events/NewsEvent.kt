@@ -10,6 +10,7 @@ class NewsEvent(
         datasets : MutableList<String>,
         board : String,
         source : Mirror.Source,
+        mirrorFile : String,
         var id: String,
         var url: String,
         var date : Long,
@@ -17,7 +18,7 @@ class NewsEvent(
         var description : String?,
         var imageUrl : String,
         private var references : MutableList<String>
-) : Event(datasets, board, source) {
+) : Event(datasets, board, source, mirrorFile) {
     override fun ID(): String = id
 
     override fun ThreadID(): String = ""
@@ -33,8 +34,8 @@ class NewsEvent(
     override fun ReferenceID(): String = url
     override fun References(): List<String> = references
 
-    override fun FindReferences() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun FindReferences() : List<Event> {
+        return emptyList()
     }
 
     override fun Subject(): String = headline?:""

@@ -56,6 +56,7 @@ class QTMirror(
                 TheStoryOfQMirror(outputDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
                 TheStoryOfQMirror(outputDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
                 TheStoryOfQMirror(outputDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                //QCodeFagNetMirror(outputDirectory, "pol", Mirror.Source.FourChan, "_allQPosts"),
                 InfChMirror(outputDirectory, "greatawakening"),
                 InfChMirror(outputDirectory, "qresearch"),
                 InfChMirror(outputDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),

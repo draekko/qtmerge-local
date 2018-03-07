@@ -226,6 +226,26 @@ class InfChMirror(
             val threadUpdated = updatedThreads.contains(thread)
             // TODO: verify crc's? are some images scrubbed to prevent doxxing and then the crc mismatches? md5 in post data isn't updated for changes?
 
+            if(threadFile.exists()) {
+                val postset = Gson().fromJson(threadFile.readText(), InfChPostSet::class.java)
+                if (postset.posts.isNotEmpty()) {
+                    var threadStartTime = postset.posts.minBy { it.time }!!.time
+                    var threadStopTime = postset.posts.maxBy { it.last_modified }!!.last_modified
+
+                    if (threadStartTime == 0L) {
+                        threadStartTime = threadStopTime
+                    }
+                    if (threadStopTime != 0L) {
+                        if (!(Instant.ofEpochSecond(threadStartTime).isAfter(startTime.toInstant()) &&
+                                        Instant.ofEpochSecond(threadStopTime).isBefore(stopTime.toInstant()))) {
+                            return@forEachIndexed
+                        }
+                    } else {
+                        println("Unable to determine thread start/stop time: ${thread.no}")
+                    }
+                }
+            }
+
             // Check thread files and references
             if (!thread.tim.isNullOrEmpty()) {
                 MirrorFile(threadUpdated, filesRoot, thread.tim!!, thread.filename!!, thread.ext ?: "")
@@ -271,7 +291,7 @@ class InfChMirror(
     }
 
     override fun MirrorSearch(params : SearchParameters) : List<Event> {
-        val eventList: MutableList<Event> = arrayListOf()
+        val eventList: MutableMap<String, Event> = mutableMapOf()
         val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
 
         println(">> search: $this")
@@ -279,7 +299,7 @@ class InfChMirror(
         InitializeThreads()
 
         // Gather posts from threads
-        threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
+        threads.sortedBy { it.no }.forEachIndexed { index, thread ->
             val pct = Math.round(index.toFloat() / threads.size * 1000)
             if(pct.rem(100) == 0) {
                 println("  >> thread: ${thread.no}: ${index + 1} / ${threads.size} (% ${pct/10})")
@@ -309,11 +329,11 @@ class InfChMirror(
                         }
 
                         postset.posts.forEach { post ->
-                            val postEvent = PostEvent.fromInfChPost("anonsw", source, board, post)
+                            val postEvent = PostEvent.fromInfChPost("anonsw", source, board, it.absolutePath, post)
                             if(params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
                                 // Add to event list if it isn't already there
-                                if(eventList.find { it.Link() == postEvent.Link() } == null) {
-                                    eventList.add(postEvent)
+                                if (!eventList.containsKey(postEvent.ID())) {
+                                    eventList[postEvent.ID()] = postEvent
                                 }
                             }
                         }
@@ -322,6 +342,8 @@ class InfChMirror(
             }
         }
 
-        return eventList
+        println("  >> Found ${eventList.size} events.")
+
+        return eventList.values.toList()
     }
 }

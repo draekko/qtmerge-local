@@ -72,7 +72,7 @@ class TheStoryOfQMirror(
         println(">> search: $this")
         val posts = Gson().fromJson(catalogFile.readText(), Array<QCodeFagPost>::class.java)
         posts.forEachIndexed { index, post ->
-            val postEvent = PostEvent.fromQCodeFagPost("thestoryofq", source, board, post)
+            val postEvent = PostEvent.fromQCodeFagPost("thestoryofq", source, board, catalogFile.absolutePath, post)
             if(params.condition.Search(exceptions, postEvent)) {
                 eventList.add(postEvent)
             }

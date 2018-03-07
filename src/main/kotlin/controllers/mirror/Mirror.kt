@@ -35,9 +35,22 @@ abstract class Mirror(
 
     enum class SearchOperator(val initialCondition : Boolean) {
         And(true),
-        Or(false);
+        Or(false),
+        Not(true);
 
-        fun combine(op1 : Boolean, op2 : Boolean) : Boolean = if(this == And) op1 && op2 else op1 || op2
+        fun combine(op1 : Boolean, op2 : Boolean) : Boolean {
+            return when(this) {
+                And -> {
+                    op1 && op2
+                }
+                Or -> {
+                    op1 || op2
+                }
+                Not -> {
+                    op1 && !op2
+                }
+            }
+        }
     }
 
     abstract class SearchOperand(
@@ -95,6 +108,8 @@ abstract class Mirror(
                 val operator : SearchOperator,
                 val operands : List<SearchOperand>
         ) : SearchOperand("Condition") {
+            constructor(operator : SearchOperator, operand: SearchOperand) : this(operator, listOf(operand))
+
             override fun Search(exceptions: BoardExceptions, event: Event): Boolean =
                     operands.foldRight(operator.initialCondition, { op, acc -> operator.combine(acc, op.Search(exceptions, event)) })
         }

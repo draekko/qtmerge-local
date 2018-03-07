@@ -92,7 +92,7 @@ class TwitterArchiveMirror(
 
             val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
             tweets.forEach { tweet ->
-                val tweetEvent = TweetEvent.fromTwitterArchiveTweet(dataset, board, tweet)
+                val tweetEvent = TweetEvent.fromTwitterArchiveTweet(dataset, board, tweetFile.absolutePath, tweet)
                 if (tweetEvent.Timestamp().toInstant().isAfter(startTime.toInstant()) &&
                         tweetEvent.Timestamp().toInstant().isBefore(stopTime.toInstant())) {
                     if(params.condition.Search(BoardExceptions(), tweetEvent)) {
