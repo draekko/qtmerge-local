@@ -1,8 +1,9 @@
 import controllers.mirror.*
+import settings.Settings.Companion.MIRRORDIR
+import settings.Settings.Companion.STARTTIME
+import settings.Settings.Companion.ZONEID
 import java.io.File
-import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 fun main(args: Array<String>) {
     QTMirror()
@@ -11,18 +12,10 @@ fun main(args: Array<String>) {
 class QTMirror(
     mirrorLabel : String = "2018-02-15"
 ) {
-    companion object {
-        val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.2-1"
-        val DATADIR = System.getProperty("user.dir") + File.separator + "mirror"
-        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZoneId.of("US/Eastern"))
-        val DATEFORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-    }
-
     init {
-        val outputDirectory = DATADIR + File.separator + mirrorLabel
+        val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
         val mirrors = arrayListOf(
-                TwitterArchiveMirror(outputDirectory, "realDonaldTrump"),
+                TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump"),
                 /*
                 TwitterArchiveMirror(mirrorDirectory, "hillaryclinton"),
                 TwitterArchiveMirror(mirrorDirectory, "senatorsessions"),
@@ -33,36 +26,36 @@ class QTMirror(
                 TwitterArchiveMirror(mirrorDirectory, "repmikepompeo"),
                 TwitterArchiveMirror(mirrorDirectory, "seanhannity"),
                 */
-                QCodeFagMirror(outputDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
-                QCodeFagMirror(outputDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
-                QCodeFagMirror(outputDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
-                QCodeFagMirror(outputDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
-                QCodeFagMirror(outputDirectory, "cbts", Mirror.Source.InfChan,"cbtsNonTrip8chanPosts"),
-                QCodeFagMirror(outputDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
-                QCodeFagMirror(outputDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                QAnonMapMirror(outputDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
-                QAnonMapMirror(outputDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
-                TheStoryOfQMirror(outputDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                //QCodeFagNetMirror(outputDirectory, "pol", Mirror.Source.FourChan, "_allQPosts"),
-                InfChMirror(outputDirectory, "greatawakening"),
-                InfChMirror(outputDirectory, "qresearch"),
-                InfChMirror(outputDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-                InfChMirror(outputDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-                InfChMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
-                FourChanMirror(outputDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
+                QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
+                QCodeFagMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
+                QCodeFagMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
+                QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
+                QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan,"cbtsNonTrip8chanPosts"),
+                QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
+                QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
+                QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
+                TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                //QCodeFagNetMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "_allQPosts"),
+                InfChMirror(mirrorDirectory, "greatawakening"),
+                InfChMirror(mirrorDirectory, "qresearch"),
+                InfChMirror(mirrorDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+                InfChMirror(mirrorDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+                InfChMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
+                FourChanMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
                 //TwitterMirror(mirrorDirectory, "JulianAssange")
                 //TwitterMirror(mirrorDirectory, "Wikileaks")
                 //TwitterMirror(mirrorDirectory, "Snowden")

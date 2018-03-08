@@ -6,6 +6,7 @@ import controllers.mirror.Mirror
 import models.importer.QCodeFagPost
 import models.mirror.FourChanPost
 import models.mirror.InfChPost
+import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.time.Instant
 import java.time.ZoneId
@@ -28,11 +29,9 @@ class PostEvent(
         var link : String,
         var threadId : String,
         var images : MutableList<PostEventImage>?,
-        var postReferences: MutableList<PostEvent>,
         var inGraphics: MutableList<String>,
-        private var references : MutableList<String>,
         private var referenceID : String
-) : Event(datasets, board, source, mirrorFile) {
+) : Event("Post", datasets, board, source, mirrorFile) {
 
     data class PostEventImage(
         var url : String?,
@@ -116,8 +115,6 @@ class PostEvent(
                     threadId.toString(),
                     mutableListOf(),
                     mutableListOf(),
-                    mutableListOf(),
-                    mutableListOf(),
                     makeReferenceID(link)
             )
 
@@ -162,8 +159,6 @@ class PostEvent(
                     fourChanPost.thread_num,
                     mutableListOf(),
                     mutableListOf(),
-                    mutableListOf(),
-                    mutableListOf(),
                     makeReferenceID(link)
             )
 
@@ -203,8 +198,6 @@ class PostEvent(
                     qCodeFagPost.threadId?:"",
                     mutableListOf(),
                     mutableListOf(),
-                    mutableListOf(),
-                    mutableListOf(),
                     makeReferenceID(qCodeFagPost.link)
             )
 
@@ -236,21 +229,16 @@ class PostEvent(
     // Example with both good and bad ref link in data:
     // "<p class=\"body-line ltr \"><a onclick=\"highlightReply('567454', event);\" href=\"\/qresearch\/res\/567140.html#567454\">&gt;&gt;567454<\/a><\/p><p class=\"body-line ltr \">These peo&gt;&gt;567493<\/p><p class=\"body-line ltr \">ple are stupid.<\/p><p class=\"body-line ltr \">Wait for Russia\/China reports.<\/p><p class=\"body-line ltr \">Sabotage.<\/p><p class=\"body-line ltr \">Investigation.<\/p><p class=\"body-line ltr \">Strike 99999999.<\/p><p class=\"body-line empty \"><\/p><p class=\"body-line ltr \">Q<\/p>"
     override fun FindReferences() : List<Event> {
-        references.addAll(postReferences.map { it.ReferenceID() })
-
+        /*
         // Find post references
         if(!text.isNullOrEmpty()) {
             Regex(""".*>>(\d+).*""").findAll(text ?: "").forEach {
-                if(!references.contains(it.groupValues[1])) {
-                    references.add(it.groupValues[1])
-                }
             }
         }
+        */
 
         return emptyList()
     }
-
-    override fun Type(): String = "Post"
 
     override fun ID(): String = id
 
@@ -262,12 +250,10 @@ class PostEvent(
 
     override fun ReferenceID(): String = referenceID
 
-    override fun References(): List<String> = references
-
     override fun RawTimestamp(): String = timestamp.toString()
 
     override fun Timestamp(): ZonedDateTime {
-        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("US/Eastern"))
+        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZONEID)
     }
 
     override fun Subject() : String = if(title.isNullOrEmpty()) subject?:"" else title?:""

@@ -1,10 +1,8 @@
 import controllers.mirror.InfChMirror
 import controllers.mirror.Mirror
 import models.events.Event
+import settings.Settings.Companion.MIRRORDIR
 import java.io.File
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 fun main(args: Array<String>) {
     QTSearch().Search()
@@ -13,16 +11,8 @@ fun main(args: Array<String>) {
 // Searches local mirror for data and creates reports
 class QTSearch(
         mirrorLabel : String = "2018-02-15",
-        private val mirrorDirectory: String = DATADIR + File.separator + mirrorLabel
+        private val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel
 ) {
-    companion object {
-        val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.2-1"
-        val DATADIR = System.getProperty("user.dir") + File.separator + "mirror"
-        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 0, 0, 0, 0, ZONEID)
-        val DATEFORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-    }
-
     fun Search(
             //mirrors : List<Mirror>
             // TODO: Options:
@@ -71,7 +61,6 @@ class QTSearch(
         events.sortedBy { it.Timestamp() }.forEachIndexed { index, event ->
             println("=".repeat(80))
             println(event.ReferenceID())
-            println(event.References())
             println(event.Text())
         }
     }

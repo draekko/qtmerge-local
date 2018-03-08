@@ -1,8 +1,8 @@
 import controllers.mirror.*
+import settings.Settings.Companion.MIRRORDIR
+import settings.Settings.Companion.ZONEID
 import java.io.File
-import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 fun main(args: Array<String>) {
     QTMonitor().Monitor()
@@ -10,16 +10,8 @@ fun main(args: Array<String>) {
 
 class QTMonitor(
         mirrorLabel : String = "2018-02-15",
-        val mirrorDirectory: String = DATADIR + File.separator + mirrorLabel
+        val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel
 ) {
-    companion object {
-        val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.2-1"
-        val DATADIR = System.getProperty("user.dir") + File.separator + "mirror"
-        val STARTTIME : ZonedDateTime = ZonedDateTime.now(ZoneId.of("US/Eastern")).minusHours(24)
-        val DATEFORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
-    }
-
     fun Monitor() {
         // Count QT events before
         /*
@@ -32,8 +24,9 @@ class QTMonitor(
         */
 
         while(true) {
+            val startTime = ZonedDateTime.now(ZONEID).minusHours(24)
             val mirrors = arrayListOf(
-                    TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", STARTTIME),
+                    TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", startTime),
                     QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
                     QCodeFagMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
                     QCodeFagMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
@@ -57,8 +50,8 @@ class QTMonitor(
                     TheStoryOfQMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
                     TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
                     TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                    InfChMirror(mirrorDirectory, "greatawakening", STARTTIME),
-                    InfChMirror(mirrorDirectory, "qresearch", STARTTIME)
+                    InfChMirror(mirrorDirectory, "greatawakening", startTime),
+                    InfChMirror(mirrorDirectory, "qresearch", startTime)
             )
 
             // Mirror post data first

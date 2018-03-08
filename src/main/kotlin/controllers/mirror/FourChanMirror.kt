@@ -413,7 +413,7 @@ class FourChanMirror(
 
                     // Update activity json if necessary
                     try {
-                        if (threadFile.iterate(threadURL.readBytesDelayed())) {
+                        if (threadFile.iterate(threadURL.readBytesDelayed(true))) {
                             println("    Updated thread $thread") // (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.time), ZONEID).format(DATEFORMATTER)})")
                             updatedThreads.add(thread)
                         }
@@ -484,7 +484,7 @@ class FourChanMirror(
             if (MakeDirectory(thumbFile.parentFile.absolutePath)) {
                 // TODO: verify checksums
                 if (!thumbFile.exists() || shouldUpdate) {
-                    if (thumbFile.iterate(thumbURL.readBytesDelayed())) {
+                    if (thumbFile.iterate(thumbURL.readBytesDelayed(true))) {
                         println("      Updated file: ${thumbFile.name}")
                     }
                 }
@@ -492,7 +492,7 @@ class FourChanMirror(
             if (MakeDirectory(fileFile.parentFile.absolutePath)) {
                 // TODO: verify checksums
                 if(!fileFile.exists() || shouldUpdate) {
-                    if (fileFile.iterate(fileURL.readBytesDelayed())) {
+                    if (fileFile.iterate(fileURL.readBytesDelayed(true))) {
                         println("      Updated file: ${fileFile.name}")
                     }
                 }

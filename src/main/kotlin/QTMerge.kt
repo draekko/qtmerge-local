@@ -5,16 +5,22 @@ import controllers.mirror.*
 import models.events.Event
 import models.events.PostEvent
 import models.q.Abbreviations
+import settings.Settings.Companion.FORMATTER
+import settings.Settings.Companion.MIRRORDIR
+import settings.Settings.Companion.STARTTIME
+import settings.Settings.Companion.VERSION
+import settings.Settings.Companion.ZONEID
+import utils.HTML.Companion.escapeHTML
 import java.io.File
-import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 // TODO: Switch to Kotson?
+// TODO: implement cache to speed up standard queries (QT, OP)
 
 fun main(args: Array<String>) {
-    QTMerge().ExportHtml()
+    val qtmerge = QTMerge()
+    qtmerge.ExportHtml()
+    qtmerge.ExportJson()
 }
 
 class QTMerge(
@@ -26,12 +32,6 @@ class QTMerge(
     var threads : MutableList<Event> = arrayListOf()
 
     companion object {
-        val ZONEID = ZoneId.of("US/Eastern")
-        val VERSION = "2018.3-4"
-        val DATADIR = System.getProperty("user.dir") + File.separator + "data"
-        val MIRRORDIR = System.getProperty("user.dir") + File.separator + "mirror"
-        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
-        val FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
         val ROLLBACKDAYS = 111L
     }
 
@@ -141,9 +141,30 @@ class QTMerge(
     }
 
     fun ExportJson() {
-        val gson = GsonBuilder().setPrettyPrinting().create()
-        File("$outputDirectory/qtmerge-pretty.json").writeText(gson.toJson(events.sortedBy { it.Timestamp().toEpochSecond() }))
-        File("$outputDirectory/qtmerge.json").writeText(Gson().toJson(events.sortedBy { it.Timestamp().toEpochSecond() }))
+        val minimalGson = Gson()
+        val prettyGson = GsonBuilder().setPrettyPrinting().create()
+        val timestamp = ZonedDateTime.now(ZONEID).format(FORMATTER)
+        File("$outputDirectory/data").mkdirs()
+        File("$outputDirectory/data/qtmerge-qtposts.json").writeText(prettyGson.toJson(mapOf(
+                Pair("qtmerge", VERSION),
+                Pair("timestamp", timestamp),
+                Pair("qtposts", events.sortedBy { it.Timestamp().toEpochSecond() }))
+        ))
+        File("$outputDirectory/data/qtmerge-qtposts-min.json").writeText(minimalGson.toJson(mapOf(
+                Pair("qtmerge", VERSION),
+                Pair("timestamp", timestamp),
+                Pair("qtposts", events.sortedBy { it.Timestamp().toEpochSecond() }))
+        ))
+        File("$outputDirectory/data/qtmerge-abbreviations.json").writeText(prettyGson.toJson(mapOf(
+                Pair("qtmerge", VERSION),
+                Pair("timestamp", timestamp),
+                Pair("abbreviations", Abbreviations.dict.toSortedMap())
+        )))
+        File("$outputDirectory/data/qtmerge-abbreviations-min.json").writeText(minimalGson.toJson(mapOf(
+                Pair("qtmerge", VERSION),
+                Pair("timestamp", timestamp),
+                Pair("abbreviations", Abbreviations.dict.toSortedMap())
+        )))
     }
 
     fun MakeHeader(title : String = "", bodyStyle : String = "") : String = """
@@ -208,6 +229,8 @@ class QTMerge(
             |       <li>Others...?</li>
             |   </ul>
             |
+            |   <p>Modified raw forms: <a href="data/qtmerge-qtposts.json">JSON</a> | <a href="data/qtmerge-qtposts-min.json">Minified JSON</a></p>
+            |
             |   <h2>Formatted Data</h2>
             |   <p>To make data easier to consume various anon's have formatted it into spreadsheets, text files, PDF's and graphics. Many
             |   of these can be found by visiting the qresearch resource library: https://8ch.net/qresearch/res/4352.html</p>
@@ -254,7 +277,7 @@ class QTMerge(
             |           $qmaps
             |       </div>
             |       <div class="derived">
-            |           <a href="catalog.html">Thread Catalog</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
+            |           <a href="catalog.html">Thread Catalog</a> | <a href="abbreviations.html">Abbreviations</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
             |       <div class="menu">
             |          <form>
@@ -337,9 +360,9 @@ class QTMerge(
         if(threads.size > 0) {
             val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
             qcat.append(MakeHeader("Thread Catalog", "margin-top: 0;"))
-            qcat.append("<a href=\"./\">&Lt; qtmerge</a><br><p>This catalog is a work in progress.")
+            qcat.append("<a href=\"./\">&Lt; qtmerge</a><br><p>This catalog is a work in progress.</p>")
 
-            qcat.append("<table id=\"catalog\"><tr><th>Date</th><th>Source</th><th>Board</th><th>Link</th><th>Subject</th></tr>")
+            qcat.append("<table id=\"catalog\"><thead><tr><th>Date</th><th>Source</th><th>Board</th><th>Link</th><th>Subject</th></tr></thead><tbody>")
             var lastDate = threads[0].Timestamp()
             threads.forEach {
                 var hr = ""
@@ -351,11 +374,28 @@ class QTMerge(
                     |<tr$hr><td>${it.Timestamp().format(FORMATTER)}</td><td>${it.Source()}</td><td>${it.Board()}</td><td><a href="${it.Link()}">${it.ID()}</a></td><td>${it.Subject()}</td></tr>
                     """.trimMargin())
             }
-            qcat.append("</table></body></html>")
+            qcat.append("</tbody></table></body></html>")
             qcat.close()
         }
 
-        // TODO: abbreviations page
+        val aout = File("$outputDirectory/abbreviations.html").outputStream().bufferedWriter()
+        aout.append(MakeHeader("Abbreviations", "margin-top:0;"))
+        aout.append("""
+            |   <a href="./">&Lt; qtmerge</a><br>
+            |   <p>
+            |   Downloads: <a href="data/qtmerge-abbreviations.json">JSON</a> | <a href="data/qtmerge-abbreviations-min.json">Minified JSON</a>
+            |   </p>
+            |<table id="abbreviations">
+            |<thead>
+            |<tr><th>Abbreviation</th><th>Possible Meaning</th></tr>
+            |</thead>
+            |<tbody>
+            """.trimMargin())
+        Abbreviations.dict.toSortedMap().forEach { abbr, meanings ->
+            aout.append("<tr><td>${escapeHTML(abbr)}</td><td>${escapeHTML(meanings)}</td></tr>")
+        }
+        aout.append("</tbody></table></body></html>")
+        aout.close()
     }
 
     fun MakeEventRow(event: Event, count : Int, emitOffset: Boolean = true) : String {

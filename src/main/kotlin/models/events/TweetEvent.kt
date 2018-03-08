@@ -2,6 +2,7 @@ package models.events
 
 import controllers.mirror.Mirror
 import models.mirror.TwitterArchiveTweet
+import settings.Settings.Companion.ZONEID
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -18,9 +19,8 @@ class TweetEvent(
         val in_reply_to_user_id_str : String?,
         val favorite_count : Long,
         val is_retweet : Boolean,
-        val retweet_board: String,
-        private val references : MutableList<String>
-) : Event(datasets, board, source, mirrorFile) {
+        val retweet_board: String
+) : Event("Tweet", datasets, board, source, mirrorFile) {
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
 
@@ -37,15 +37,12 @@ class TweetEvent(
                 tweet.in_reply_to_user_id_str,
                 tweet.favorite_count,
                 tweet.is_retweet,
-                if(tweet.is_retweet) tweet.text.substring(4, tweet.text.indexOf(':')) else "",
-                mutableListOf()
+                if(tweet.is_retweet) tweet.text.substring(4, tweet.text.indexOf(':')) else ""
             )
 
             return tweetEvent
         }
     }
-
-    override fun Type(): String = "Tweet"
 
     override fun ID(): String = id_str
 
@@ -59,8 +56,6 @@ class TweetEvent(
 
     override fun ReferenceID(): String = Link()
 
-    override fun References(): List<String> = references
-
     override fun FindReferences() : List<Event> {
         return emptyList()
     }
@@ -70,7 +65,7 @@ class TweetEvent(
     }
 
     override fun Timestamp() : ZonedDateTime {
-        return ZonedDateTime.parse(created_at, formatter).withZoneSameInstant(ZoneId.of("US/Eastern"))
+        return ZonedDateTime.parse(created_at, formatter).withZoneSameInstant(ZONEID)
     }
 
     override fun Subject(): String = ""
