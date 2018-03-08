@@ -1,7 +1,5 @@
 package controllers.mirror
 
-import QTMirror.Companion.DATEFORMATTER
-import QTMirror.Companion.ZONEID
 import com.google.gson.Gson
 import extensions.iterate
 import extensions.readBytesDelayed
@@ -10,6 +8,8 @@ import models.events.PostEvent
 import models.mirror.InfChPostSet
 import models.mirror.InfChThread
 import models.mirror.InfChThreadPage
+import settings.Settings.Companion.FORMATTER
+import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.io.File
 import java.io.FileNotFoundException
@@ -22,8 +22,8 @@ import java.time.ZonedDateTime
 class InfChMirror(
         mirrorDirectory : String,
         board : String,
-        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
-        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
+        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
+        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(mirrorDirectory, board, Source.InfChan, "anonsw") {
     var threads : MutableList<InfChThread> = arrayListOf()
     val updatedThreads : MutableList<InfChThread> = arrayListOf()
@@ -171,7 +171,7 @@ class InfChMirror(
                     // Update thread json if necessary
                     try {
                         if (threadFile.iterate(threadURL.readBytesDelayed())) {
-                            println("    Updated thread ${thread.no} (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.last_modified), ZONEID).format(DATEFORMATTER)})")
+                            println("    Updated thread ${thread.no} (${ZonedDateTime.ofInstant(Instant.ofEpochSecond(thread.last_modified), ZONEID).format(FORMATTER)})")
                             updatedThreads.add(thread)
                         }
                     } catch (e: FileNotFoundException) {

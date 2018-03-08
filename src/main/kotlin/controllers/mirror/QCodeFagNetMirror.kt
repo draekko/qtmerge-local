@@ -7,6 +7,7 @@ import models.events.Event
 import models.events.PostEvent
 import models.importer.QCodeFagPost
 import models.mirror.InfChThread
+import settings.Settings.Companion.ZONEID
 import java.io.File
 import java.io.FileNotFoundException
 import java.net.URL
@@ -18,8 +19,8 @@ class QCodeFagNetMirror(
         board : String,
         source : Source,
         val boardFileID: String,
-        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
-        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
+        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
+        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(mirrorDirectory, board, source, "qcodefagnet") {
     var threads: MutableList<InfChThread> = mutableListOf()
     val updatedThreads: MutableList<InfChThread> = mutableListOf()

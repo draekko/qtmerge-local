@@ -1,6 +1,5 @@
 package controllers.mirror
 
-import QTMirror
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import extensions.iterate
@@ -9,6 +8,7 @@ import models.events.Event
 import models.events.PostEvent
 import models.mirror.FourChanPost
 import models.mirror.FourChanThread
+import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.io.File
 import java.io.FileNotFoundException
@@ -20,8 +20,8 @@ import java.time.ZonedDateTime
 class FourChanMirror(
         mirrorDirectory : String,
         board : String,
-        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
-        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
+        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
+        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(mirrorDirectory, board, Source.FourChan, "anonsw") {
     val mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "4chan"
     val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board

@@ -6,6 +6,7 @@ import extensions.readBytesDelayed
 import models.events.Event
 import models.events.TweetEvent
 import models.mirror.TwitterArchiveTweet
+import settings.Settings.Companion.ZONEID
 import java.io.File
 import java.io.FileNotFoundException
 import java.net.URL
@@ -15,8 +16,8 @@ import java.time.ZonedDateTime
 class TwitterArchiveMirror(
         outputDirectory : String,
         board : String,
-        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
-        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
+        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
+        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(outputDirectory, board, Source.Twitter, "twitterarchive") {
 
     override fun Mirror() {

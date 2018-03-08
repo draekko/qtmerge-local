@@ -1,14 +1,12 @@
 package controllers.mirror
 
-import QTMirror.Companion.ZONEID
-import com.sun.org.apache.xpath.internal.operations.Or
 import models.events.Event
-import models.events.TweetEvent
+import settings.Settings.Companion.ZONEID
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import java.time.ZonedDateTime
 import java.time.Instant
+import java.time.ZonedDateTime
 
 abstract class Mirror(
         val mirrorDirectory : String,

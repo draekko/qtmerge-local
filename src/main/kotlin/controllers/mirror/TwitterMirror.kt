@@ -1,6 +1,7 @@
 package controllers.mirror
 
 import models.events.Event
+import settings.Settings.Companion.ZONEID
 import java.io.File
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -8,8 +9,8 @@ import java.time.ZonedDateTime
 class TwitterMirror(
         mirrorDirectory : String,
         board : String,
-        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, QTMirror.ZONEID),
-        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), QTMirror.ZONEID)
+        val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
+        val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(mirrorDirectory, board, Source.Twitter, "anonsw") {
     val baseURL = "https://twitter.com"
     val mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "twitter"
