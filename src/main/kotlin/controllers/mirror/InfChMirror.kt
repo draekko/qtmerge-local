@@ -320,14 +320,16 @@ class InfChMirror(
                                 val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
 
                                 postset.posts.forEach { post ->
-                                    if (Instant.ofEpochSecond(post.time).isAfter(startTime.toInstant()) &&
-                                            Instant.ofEpochSecond(post.time).isBefore(stopTime.toInstant())) {
-                                        val postEvent = PostEvent.fromInfChPost("anonsw", source, board, it.absolutePath, post)
-                                        if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
+                                    val postEvent = PostEvent.fromInfChPost("anonsw", source, board, it.absolutePath, post)
+                                    if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
+                                        if(postCache.find { it.no == post.no } == null) {
+                                            postCache.add(post)
+                                        }
+                                        if (Instant.ofEpochSecond(post.time).isAfter(startTime.toInstant()) &&
+                                                Instant.ofEpochSecond(post.time).isBefore(stopTime.toInstant())) {
                                             // Add to event list if it isn't already there
                                             if (!eventList.containsKey(postEvent.ID())) {
                                                 eventList[postEvent.ID()] = postEvent
-                                                postCache.add(post)
                                             }
                                         }
                                     }

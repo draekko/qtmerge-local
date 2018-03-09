@@ -374,21 +374,6 @@ class FourChanMirror(
     }
 
     init {
-        // Collect unique threads from qcodefag and qanonmap
-        /*
-        QCodeFagMirror(mirrorDirectory, "pol", Source.FourChan, "pol4chanPosts", startTime, stopTime).MirrorSearch(SearchParameters(content = Regex(".*"), onlyQT = false))
-                .forEach { post ->
-                    if(!threads.contains((post as PostEvent).threadId)) {
-                        threads.add(post.threadId)
-                    }
-                }
-        QAnonMapMirror(mirrorDirectory,"pol", Source.FourChan, "pol4chanPosts", startTime, stopTime).MirrorSearch(SearchParameters(content = Regex(".*"), onlyQT = false))
-                .forEach { post ->
-                    if(!threads.contains((post as PostEvent).threadId)) {
-                        threads.add(post.threadId)
-                    }
-                }
-                */
         threads.addAll(EXCEPTIONS["pol"]!!.orphanThreads)
     }
 
@@ -438,10 +423,12 @@ class FourChanMirror(
                 val threadMap : Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
 
                 // Check thread files and references
-                if(threadMap[thread]!!.op.media != null) {
-                    MirrorFile(threadUpdated, threadMap[thread]!!.op.media!!)
+                if(threadMap[thread]!!.op != null) {
+                    if (threadMap[thread]!!.op!!.media != null) {
+                        MirrorFile(threadUpdated, threadMap[thread]!!.op!!.media!!)
+                    }
+                    //MirrorReferences(threadUpdated, boardRoot, thread.no, thread.no, listOf(thread.name, thread.com).joinToString("\n"))
                 }
-                //MirrorReferences(threadUpdated, boardRoot, thread.no, thread.no, listOf(thread.name, thread.com).joinToString("\n"))
 
                 if(threadMap[thread]!!.posts != null) {
                     threadMap[thread]!!.posts!!.keys.forEachIndexed { index, postIndex ->
@@ -505,47 +492,92 @@ class FourChanMirror(
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableMap<String, Event> = mutableMapOf()
+        val listType = object : TypeToken<Map<String, FourChanThread>>() {}.type
 
         println(">> search: $this")
 
         threads.sortedBy { it.toLong() }.forEachIndexed { index, thread ->
-            val threadRoot = mirrorLayout.boards + File.separator + thread
             val threadUpdated = updatedThreads.contains(thread)
 
-            File(threadRoot).listFiles().sortedBy { -it.lastModified() }.forEach { threadFile ->
-                if (threadFile.name.startsWith(thread) && threadFile.extension.startsWith("json")) {
-                    // Check post files and references
-                    try {
-                        val error: Map<String, String> = Gson().fromJson(threadFile.readText(), object : TypeToken<Map<String, String>>() {}.type)
-                        if (error.containsKey("error")) {
-                            return@forEachIndexed
+            val threadMirrorRoot = mirrorLayout.boards + File.separator + thread
+            val threadCacheRoot = cacheLayout.boards + File.separator + thread
+            if (MakeDirectory(threadMirrorRoot) && MakeDirectory(threadCacheRoot)) {
+                val cacheFile = File(threadCacheRoot + File.separator + "$thread-${params.cacheID()}.json")
+                val latestThread = File(threadMirrorRoot).listFiles().maxBy { it.lastModified() }
+                if(latestThread != null) {
+                    if (!cacheFile.exists() || cacheFile.lastModified() < latestThread.lastModified()) {
+                        println("  >> thread: $thread: updating cache")
+                        val postCache = mutableMapOf<String, FourChanPost>()
+
+                        File(threadMirrorRoot).listFiles().sortedBy { -it.lastModified() }.forEach { threadFile ->
+                            if (threadFile.name.startsWith(thread) && threadFile.extension.startsWith("json")) {
+                                // Check post files and references
+                                try {
+                                    val error: Map<String, String> = Gson().fromJson(threadFile.readText(), object : TypeToken<Map<String, String>>() {}.type)
+                                    if (error.containsKey("error")) {
+                                        return@forEachIndexed
+                                    }
+                                } catch (e: Exception) { /* all ok, not an error */
+                                }
+                                val threadMap: Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
+
+                                // Search OP if it is set (should always be in mirror data, but checking just in case)
+                                if(threadMap[thread]!!.op != null) {
+                                    val threadOp = threadMap[thread]!!.op!!
+                                    val threadPostEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, threadOp)
+                                    if (params.condition.Search(EXCEPTIONS[board]!!, threadPostEvent)) {
+                                        if(!postCache.containsKey(threadOp.num)) {
+                                            postCache[threadOp.num] = threadOp
+                                        }
+                                        if (Instant.ofEpochSecond(threadOp.timestamp).isAfter(startTime.toInstant()) &&
+                                                Instant.ofEpochSecond(threadOp.timestamp).isBefore(stopTime.toInstant())) {
+                                            // Add to event list if it isn't already there
+                                            if (!eventList.containsKey(threadPostEvent.Link())) {
+                                                eventList[threadPostEvent.Link()] = threadPostEvent
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (threadMap[thread]!!.posts != null) {
+                                    threadMap[thread]!!.posts!!.keys.forEach {
+                                        val post = threadMap[thread]!!.posts!![it]!!
+                                        val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, post)
+                                        if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
+                                            if(!postCache.containsKey(post.num)) {
+                                                postCache[post.num] = post
+                                            }
+                                            if (Instant.ofEpochSecond(post.timestamp).isAfter(startTime.toInstant()) &&
+                                                    Instant.ofEpochSecond(post.timestamp).isBefore(stopTime.toInstant())) {
+                                                // Add to event list if it isn't already there
+                                                if (!eventList.containsKey(postEvent.ID())) {
+                                                    eventList[postEvent.ID()] = postEvent
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    } catch (e: Exception) { /* all ok, not an error */
-                    }
-                    val listType = object : TypeToken<Map<String, FourChanThread>>() {}.type
-                    val threadMap: Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
 
-                    val threadPostEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, threadMap[thread]!!.op)
-                    if (params.condition.Search(EXCEPTIONS[board]!!, threadPostEvent)) {
-                        // Add to event list if it isn't already there
-                        if (!eventList.containsKey(threadPostEvent.Link())) {
-                            eventList[threadPostEvent.Link()] = threadPostEvent
-                        }
-                    }
-
-                    if (threadMap[thread]!!.posts != null) {
-                        threadMap[thread]!!.posts!!.keys.forEach {
-                            val post = threadMap[thread]!!.posts!![it]!!
-
-                            val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, post)
-                            if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
-                                // Add to event list if it isn't already there
-                                if (!eventList.containsKey(postEvent.ID())) {
+                        // Write cache file (OP, if found in search, is stored in posts rather than OP for cache, so null op)
+                        cacheFile.writeText(Gson().toJson(mapOf(Pair(thread, FourChanThread(null, postCache)))))
+                    } else {
+                        val threadMap : Map<String, FourChanThread> = Gson().fromJson(cacheFile.readText(), listType)
+                        if (threadMap[thread]!!.posts != null) {
+                            threadMap[thread]!!.posts!!.keys.forEach {
+                                val post = threadMap[thread]!!.posts!![it]!!
+                                if (Instant.ofEpochSecond(post.timestamp).isAfter(startTime.toInstant()) &&
+                                        Instant.ofEpochSecond(post.timestamp).isBefore(stopTime.toInstant())) {
+                                    val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, cacheFile.absolutePath, post)
                                     eventList[postEvent.ID()] = postEvent
                                 }
                             }
                         }
                     }
+                } else {
+                    // TODO: collect into error report
+                    //println("No threads: $threadMirrorRoot")
                 }
             }
 

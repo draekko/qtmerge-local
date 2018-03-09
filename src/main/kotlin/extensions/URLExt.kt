@@ -21,7 +21,7 @@ fun URL.readBytesDelayed(useAgent : Boolean = false) : ByteArray {
     stream?.close()
 
     // Minimum sleep between URL reads
-    Thread.sleep(100)
+    Thread.sleep(200)
     return bytes
 }
 
