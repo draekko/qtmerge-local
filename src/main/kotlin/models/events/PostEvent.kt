@@ -18,24 +18,24 @@ class PostEvent(
         source : Mirror.Source,
         mirrorFile: String,
         var id : String,
-        var userId : String?,
+        var userId : String,
         var timestamp : Long,
-        var title : String?,
-        var name : String?,
-        var email : String?,
-        var trip : String?,
-        var text : String?,
-        var subject : String?,
+        var title : String,
+        var name : String,
+        var email : String,
+        var trip : String,
+        var text : String,
+        var subject : String,
         var link : String,
         var threadId : String,
-        var images : MutableList<PostEventImage>?,
+        var images : MutableList<PostEventImage>,
         var inGraphics: MutableList<String>,
         private var referenceID : String
 ) : Event("Post", datasets, board, source, mirrorFile) {
 
     data class PostEventImage(
-        var url : String?,
-        var filename : String?
+        var url : String,
+        var filename : String
     )
 
     companion object {
@@ -103,14 +103,14 @@ class PostEvent(
                     source,
                     mirrorFile,
                     infChPost.no.toString(),
-                    infChPost.id,
+                    infChPost.id?:"",
                     infChPost.time,
-                    infChPost.title,
-                    infChPost.name,
-                    infChPost.email,
-                    infChPost.trip,
+                    infChPost.title?:"",
+                    infChPost.name?:"",
+                    infChPost.email?:"",
+                    infChPost.trip?:"",
                     cleanHTMLText(infChPost.com),
-                    infChPost.sub,
+                    infChPost.sub?:"",
                     link,
                     threadId.toString(),
                     mutableListOf(),
@@ -119,10 +119,10 @@ class PostEvent(
             )
 
             if(infChPost.tim?.isNotEmpty() == true) {
-                postEvent.images!!.add(PostEventImage("https://media.8ch.net/file_store/${infChPost.tim}${infChPost.ext}", infChPost.filename))
+                postEvent.images.add(PostEventImage("https://media.8ch.net/file_store/${infChPost.tim}${infChPost.ext}", infChPost.filename?:"unknown"))
             }
             infChPost.extra_files?.forEach {
-                postEvent.images!!.add(PostEventImage("https://media.8ch.net/file_store/${it.tim}${it.ext}", it.filename))
+                postEvent.images.add(PostEventImage("https://media.8ch.net/file_store/${it.tim}${it.ext}", it.filename))
             }
 
             // Link graphics/maps
@@ -147,12 +147,12 @@ class PostEvent(
                     source,
                     mirrorFile,
                     fourChanPost.num,
-                    fourChanPost.poster_hash,
+                    fourChanPost.poster_hash?:"",
                     fourChanPost.timestamp,
-                    fourChanPost.title,
-                    fourChanPost.name,
-                    fourChanPost.email,
-                    fourChanPost.trip,
+                    fourChanPost.title?:"",
+                    fourChanPost.name?:"",
+                    fourChanPost.email?:"",
+                    fourChanPost.trip?:"",
                     cleanHTMLText(fourChanPost.comment?:""),
                     "",
                     link,
@@ -186,14 +186,14 @@ class PostEvent(
                     source,
                     mirrorFile,
                     qCodeFagPost.id,
-                    qCodeFagPost.userId,
+                    qCodeFagPost.userId?:"",
                     qCodeFagPost.timestamp,
-                    qCodeFagPost.title,
-                    qCodeFagPost.name,
-                    qCodeFagPost.email,
-                    qCodeFagPost.trip,
-                    qCodeFagPost.text,
-                    qCodeFagPost.subject,
+                    qCodeFagPost.title?:"",
+                    qCodeFagPost.name?:"",
+                    qCodeFagPost.email?:"",
+                    qCodeFagPost.trip?:"",
+                    qCodeFagPost.text?:"",
+                    qCodeFagPost.subject?:"",
                     qCodeFagPost.link,
                     qCodeFagPost.threadId?:"",
                     mutableListOf(),
@@ -203,7 +203,7 @@ class PostEvent(
 
             if(qCodeFagPost.images?.isNotEmpty() == true) {
                 qCodeFagPost.images!!.forEach {
-                    postEvent.images!!.add(PostEventImage(it.url, it.filename))
+                    postEvent.images!!.add(PostEventImage(it.url?:"missing", it.filename?:"unknown"))
                 }
             }
 

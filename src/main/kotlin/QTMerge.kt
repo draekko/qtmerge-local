@@ -15,7 +15,6 @@ import java.io.File
 import java.time.ZonedDateTime
 
 // TODO: Switch to Kotson?
-// TODO: implement cache to speed up standard queries (QT, OP)
 
 fun main(args: Array<String>) {
     val qtmerge = QTMerge()
@@ -52,17 +51,18 @@ class QTMerge(
 
     fun LoadMirrors() {
         val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
+        val cacheDirectory = MIRRORDIR + File.separator + "cache"
         mirrors.addAll(listOf(
             // Twitter Archive
             MirrorConfig(TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", STARTTIME), true),
 
             // Anonsw
-            MirrorConfig(FourChanMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror(mirrorDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror(mirrorDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror(mirrorDirectory, "greatawakening", STARTTIME), true),
-            MirrorConfig(InfChMirror(mirrorDirectory, "qresearch", STARTTIME), true),
+            MirrorConfig(FourChanMirror(mirrorDirectory, cacheDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, cacheDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, cacheDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, cacheDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, cacheDirectory, "greatawakening", STARTTIME), true),
+            MirrorConfig(InfChMirror(mirrorDirectory, cacheDirectory, "qresearch", STARTTIME), true),
 
             // QCodeFag
             MirrorConfig(QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
@@ -224,7 +224,8 @@ class QTMerge(
             |       <li>https://archive.4plebs.org/</li>
             |       <li>https://trumptwitterarchive.com/</li>
             |       <li>https://github.com/qcodefag/ &rarr; https://qcodefag.github.io/, https://qanonposts.com/</li>
-            |       <li>https://github.com/qanonmap/ &rarr; https://qanonmap.github.io/, https://thestoryofq.com/ ?</li>
+            |       <li>https://github.com/qanonmap/ &rarr; https://qanonmap.github.io/, https://qanon.pub/</li>
+            |       <li>? &rarr; https://thestoryofq.com/</li>
             |       <li>https://github.com/anonsw/ &rarr; https://anonsw.github.io/</li>
             |       <li>Others...?</li>
             |   </ul>
@@ -272,7 +273,7 @@ class QTMerge(
             |           <b><a href="datasets.html">Datasets</a>:</b>
             |           <a href="https://anonsw.github.io/">anonsw</a> |
             |           <a href="https://qanonposts.com/">qcodefag</a> |
-            |           <a href="https://qanonmap.github.io/">qanonmap</a> |
+            |           <a href="https://qanon.pub/">qanonmap</a> |
             |           <a href="https://trumptwitterarchive.com/">twitterarchive</a> |
             |           $qmaps
             |       </div>
@@ -426,20 +427,21 @@ class QTMerge(
         out.appendln("      <td class=\"e-timestamp\">Posted: ${event.Timestamp().format(FORMATTER)}${if(emitOffset) "<br>Offset: ${event.Timestamp().plusDays(ROLLBACKDAYS).format(FORMATTER)}" else ""}<br><span class=\"count\">(${if(isQPost) "Post" else "Tweet"} #<b>$count</b>)</span><br><span class=\"id\">[${event.ID()}]</span></td>")
         out.appendln("      <td class=\"e-trip\">$trip${if(event.Board().isNotEmpty()) "<br><span class=\"board\">(${event.Board()})</span>" else ""}<br><span class=\"datasets\">[$datasets]</span></td>")
         out.appendln("      <td class=\"e-type\"><a href=\"${event.Link()}\">${event.Type()}</a></td>")
-        var images = ""
-        event.Images().forEach {
+        var images = event.Images().map {
+            var str = ""
             if (it.first != null) {
-                images = """<a href="${it.first}">"""
+                str += """<a href="${it.first}">"""
             }
             if (it.second != null) {
-                images += it.second
+                str += it.second
             } else if (it.first != null) {
-                images += it.first
+                str += it.first
             }
             if (it.first != null) {
-                images += "</a>"
+                str += "</a>"
             }
-        }
+            str
+        }.joinToString("<br>")
         if(images.isNotEmpty() && event.Text().isNotEmpty()) {
             images += "<br>"
         }
@@ -465,15 +467,8 @@ class QTMerge(
             "<span class=\"abbr\" title=\"${Abbreviations.dict[matchResult.groupValues[1]]}\">${matchResult.groupValues[1]}</span>"
         })
         text = "<div class=\"e-text-line\"><span>" + text.split("\n").joinToString("</span></div><div class=\"e-text-line\"><span>") + "</span></div>"
-        out.appendln("        <td class=\"e-text\">$images$text</td>")
+        out.appendln("      <td class=\"e-text\">$images$text</td>")
         out.appendln("    </tr>")
-
-        /*
-        if(event.ID() == "567502") {
-            println(event.Text())
-            println(text)
-        }
-        */
 
         return out.toString()
     }

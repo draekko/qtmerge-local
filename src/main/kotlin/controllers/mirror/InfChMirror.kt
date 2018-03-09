@@ -5,6 +5,7 @@ import extensions.iterate
 import extensions.readBytesDelayed
 import models.events.Event
 import models.events.PostEvent
+import models.mirror.InfChPost
 import models.mirror.InfChPostSet
 import models.mirror.InfChThread
 import models.mirror.InfChThreadPage
@@ -21,19 +22,20 @@ import java.time.ZonedDateTime
 
 class InfChMirror(
         mirrorDirectory : String,
+        cacheDirectory : String,
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(mirrorDirectory, board, Source.InfChan, "anonsw") {
+
     var threads : MutableList<InfChThread> = arrayListOf()
     val updatedThreads : MutableList<InfChThread> = arrayListOf()
-    var mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "8ch"
-    var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
-    var filesRoot = mirrorRoot + File.separator + "files"
+    var mirrorLayout = MirrorLayout(mirrorDirectory, dataset, "8ch", board)
+    var cacheLayout = MirrorLayout(cacheDirectory, dataset, "8ch", board)
     val catalogURL = URL("https://8ch.net/$board/threads.json")     // Starting around 2018-03-04 catalog.json is now threads.json
-    val catalogFile = File(boardRoot + File.separator + "threads.json")
+    val catalogFile = File(mirrorLayout.boards + File.separator + "threads.json")
     val archiveURL = URL("https://8ch.net/$board/archive/index.html")
-    val archiveFile = File(boardRoot + File.separator + "archive.html")
+    val archiveFile = File(mirrorLayout.boards + File.separator + "archive.html")
 
     companion object {
         private val ACTIVEQTRIPS = listOf("!UW.yye1fxo")
@@ -72,7 +74,7 @@ class InfChMirror(
         threads.clear()
 
         // Gather threads from catalogs
-        File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
+        File(mirrorLayout.boards).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
             if(catalogFile.name.matches(Regex("^(catalog|threads).*")) && catalogFile.extension.startsWith("json")) {
                 val catalog = Gson().fromJson(catalogFile.readText(), Array<InfChThreadPage>::class.java)
                 catalog.forEach { page ->
@@ -86,7 +88,7 @@ class InfChMirror(
         }
 
         // Gather threads from archives
-        File(boardRoot).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
+        File(mirrorLayout.boards).listFiles().sortedBy { -it.lastModified() }.forEach { catalogFile ->
             if (catalogFile.name.startsWith("archive") && catalogFile.extension.startsWith("html")) {
                 Regex("""$board/res/(\d+).html.*>([^<]*)<.*\"date\"\s*:\s*(\d+)""", RegexOption.MULTILINE).findAll(archiveFile.readText()).forEach { match ->
                     if (threads.find { it.no == match.groups[1]!!.value.toLong() } == null) {
@@ -112,11 +114,11 @@ class InfChMirror(
     override fun Mirror() {
         println(">> mirror: $this")
         updatedThreads.clear()
-        if(MakeDirectory(mirrorRoot)) {
-            if(!MakeDirectory(boardRoot)) {
+        if(MakeDirectory(mirrorLayout.root)) {
+            if(!MakeDirectory(mirrorLayout.boards)) {
                 return
             }
-            if(!MakeDirectory(filesRoot)) {
+            if(!MakeDirectory(mirrorLayout.files)) {
                 return
             }
 
@@ -143,7 +145,7 @@ class InfChMirror(
             InitializeThreads()
 
             threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
-                val threadRoot = boardRoot + File.separator + thread.no
+                val threadRoot = mirrorLayout.boards + File.separator + thread.no
                 if (MakeDirectory(threadRoot)) {
                     val threadURL = URL("https://8ch.net/$board/res/${thread.no}.json")
                     val threadFile = File(threadRoot + File.separator + "${thread.no}.json")
@@ -221,7 +223,7 @@ class InfChMirror(
         println(">> mirror refs: $this")
 
         threads.sortedBy { -it.no }.forEachIndexed { index, thread ->
-            val threadRoot = boardRoot + File.separator + thread.no
+            val threadRoot = mirrorLayout.boards + File.separator + thread.no
             val threadFile = File(threadRoot + File.separator + "${thread.no}.json")
             val threadUpdated = updatedThreads.contains(thread)
             // TODO: verify crc's? are some images scrubbed to prevent doxxing and then the crc mismatches? md5 in post data isn't updated for changes?
@@ -248,9 +250,9 @@ class InfChMirror(
 
             // Check thread files and references
             if (!thread.tim.isNullOrEmpty()) {
-                MirrorFile(threadUpdated, filesRoot, thread.tim!!, thread.filename!!, thread.ext ?: "")
+                MirrorFile(threadUpdated, mirrorLayout.files, thread.tim!!, thread.filename!!, thread.ext ?: "")
             }
-            MirrorReferences(threadUpdated, boardRoot, thread.no, thread.no, listOf(thread.name, thread.com).joinToString("\n"))
+            MirrorReferences(threadUpdated, mirrorLayout.boards, thread.no, thread.no, listOf(thread.name, thread.com).joinToString("\n"))
 
             // Check post files and references
             if(threadFile.exists()) {
@@ -263,12 +265,12 @@ class InfChMirror(
                         }
                     }
                     if (!post.tim.isNullOrEmpty()) {
-                        MirrorFile(threadUpdated, filesRoot, post.tim!!, post.filename!!, post.ext ?: "")
+                        MirrorFile(threadUpdated, mirrorLayout.files, post.tim!!, post.filename!!, post.ext ?: "")
                     }
-                    MirrorReferences(threadUpdated, boardRoot, thread.no, post.no, listOf(post.title, post.sub, post.com).joinToString("\n"))
+                    MirrorReferences(threadUpdated, mirrorLayout.boards, thread.no, post.no, listOf(post.title, post.sub, post.com).joinToString("\n"))
 
                     post.extra_files?.forEach { file ->
-                        MirrorFile(threadUpdated, filesRoot, file.tim, file.filename, file.ext)
+                        MirrorFile(threadUpdated, mirrorLayout.files, file.tim, file.filename, file.ext)
                     }
                 }
             } else {
@@ -292,7 +294,6 @@ class InfChMirror(
 
     override fun MirrorSearch(params : SearchParameters) : List<Event> {
         val eventList: MutableMap<String, Event> = mutableMapOf()
-        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
 
         println(">> search: $this")
 
@@ -305,39 +306,50 @@ class InfChMirror(
                 println("  >> thread: ${thread.no}: ${index + 1} / ${threads.size} (% ${pct/10})")
             }
 
-            val threadRoot = boardRoot + File.separator + thread.no
-            if (MakeDirectory(threadRoot)) {
-                File(threadRoot).listFiles().sortedBy { -it.lastModified() }.forEach {
-                    if (it.name.startsWith(thread.no.toString()) && it.extension.startsWith("json")) {
-                        val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
+            val threadMirrorRoot = mirrorLayout.boards + File.separator + thread.no
+            val threadCacheRoot = cacheLayout.boards + File.separator + thread.no
+            if (MakeDirectory(threadMirrorRoot) && MakeDirectory(threadCacheRoot)) {
+                val cacheFile = File(threadCacheRoot + File.separator + "${thread.no}-${params.cacheID()}.json")
+                val latestThread = File(threadMirrorRoot).listFiles().maxBy { it.lastModified() }
+                if(latestThread != null) {
+                    if (!cacheFile.exists() || cacheFile.lastModified() < latestThread.lastModified()) {
+                        println("  >> thread: ${thread.no}: updating cache")
+                        val postCache = mutableListOf<InfChPost>()
+                        File(threadMirrorRoot).listFiles().sortedBy { -it.lastModified() }.forEach {
+                            if (it.name.startsWith(thread.no.toString()) && it.extension.startsWith("json")) {
+                                val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
 
-                        if (postset.posts.isNotEmpty()) {
-                            var threadStartTime = postset.posts.minBy { it.time }!!.time
-                            var threadStopTime = postset.posts.maxBy { it.last_modified }!!.last_modified
-
-                            if (threadStartTime == 0L) {
-                                threadStartTime = threadStopTime
-                            }
-                            if (threadStopTime != 0L) {
-                                if (!(Instant.ofEpochSecond(threadStartTime).isAfter(startTime.toInstant()) &&
-                                                Instant.ofEpochSecond(threadStopTime).isBefore(stopTime.toInstant()))) {
-                                    return@forEachIndexed
+                                postset.posts.forEach { post ->
+                                    if (Instant.ofEpochSecond(post.time).isAfter(startTime.toInstant()) &&
+                                            Instant.ofEpochSecond(post.time).isBefore(stopTime.toInstant())) {
+                                        val postEvent = PostEvent.fromInfChPost("anonsw", source, board, it.absolutePath, post)
+                                        if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
+                                            // Add to event list if it isn't already there
+                                            if (!eventList.containsKey(postEvent.ID())) {
+                                                eventList[postEvent.ID()] = postEvent
+                                                postCache.add(post)
+                                            }
+                                        }
+                                    }
                                 }
-                            } else {
-                                println("Unable to determine thread start/stop time: ${thread.no}")
                             }
                         }
 
+                        // Write cache file
+                        cacheFile.writeText(Gson().toJson(InfChPostSet(postCache.toTypedArray())))
+                    } else {
+                        val postset = Gson().fromJson(cacheFile.readText(), InfChPostSet::class.java)
                         postset.posts.forEach { post ->
-                            val postEvent = PostEvent.fromInfChPost("anonsw", source, board, it.absolutePath, post)
-                            if(params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
-                                // Add to event list if it isn't already there
-                                if (!eventList.containsKey(postEvent.ID())) {
-                                    eventList[postEvent.ID()] = postEvent
-                                }
+                            if (Instant.ofEpochSecond(post.time).isAfter(startTime.toInstant()) &&
+                                    Instant.ofEpochSecond(post.time).isBefore(stopTime.toInstant())) {
+                                val postEvent = PostEvent.fromInfChPost("anonsw", source, board, cacheFile.absolutePath, post)
+                                eventList[postEvent.ID()] = postEvent
                             }
                         }
                     }
+                } else {
+                    // TODO: collect into error report
+                    //println("No threads: $threadMirrorRoot")
                 }
             }
         }

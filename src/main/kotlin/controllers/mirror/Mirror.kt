@@ -2,6 +2,7 @@ package controllers.mirror
 
 import models.events.Event
 import settings.Settings.Companion.ZONEID
+import utils.sanitizeFileName
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -14,10 +15,22 @@ abstract class Mirror(
         val source : Source,
         val dataset: String
 ) {
+    class MirrorLayout(
+            directory : String,
+            dataset : String,
+            source : String,
+            board : String,
+            var root : String = directory + File.separator + dataset + File.separator + source,
+            var boards : String = root + File.separator + "boards" + File.separator + board,
+            var files : String = root + File.separator + "files"
+    )
+
     enum class ReferenceDepth {
         None,
         Shallow,
-        Deep
+        Deep;
+
+        fun cacheID() : String = name
     }
 
     enum class Source(val title : String, val url : String) {
@@ -34,7 +47,10 @@ abstract class Mirror(
     enum class SearchOperator(val initialCondition : Boolean) {
         And(true),
         Or(false),
-        Not(true);
+        AndNot(true),
+        OrNot(false);
+
+        fun cacheID() : String = name
 
         fun combine(op1 : Boolean, op2 : Boolean) : Boolean {
             return when(this) {
@@ -44,8 +60,11 @@ abstract class Mirror(
                 Or -> {
                     op1 || op2
                 }
-                Not -> {
+                AndNot -> {
                     op1 && !op2
+                }
+                OrNot -> {
+                    op1 || !op2
                 }
             }
         }
@@ -54,17 +73,21 @@ abstract class Mirror(
     abstract class SearchOperand(
         val name : String
     ) {
+        abstract fun cacheID() : String
         abstract fun Search(exceptions: BoardExceptions, event: Event) : Boolean
 
         class IDs(val ids : MutableList<String>) : SearchOperand("IDs") {
+            override fun cacheID(): String = "$name:" + ids.joinToString(",")
             override fun Search(exceptions: BoardExceptions, event: Event) : Boolean = ids.contains(event.ID())
         }
 
         class Trips(val trips : MutableList<String>) : SearchOperand("Trips") {
+            override fun cacheID(): String = "$name:" + trips.joinToString(",")
             override fun Search(exceptions: BoardExceptions, event: Event): Boolean = trips.contains(event.Trip())
         }
 
         class QT : SearchOperand("QT") {
+            override fun cacheID(): String = name
             override fun Search(exceptions: BoardExceptions, event: Event): Boolean {
                 if(event.Source() == Source.Twitter) {
                     return true
@@ -95,10 +118,12 @@ abstract class Mirror(
         }
 
         class OP : SearchOperand("OP") {
+            override fun cacheID(): String = name
             override fun Search(exceptions: BoardExceptions, event: Event): Boolean = event.ID() == event.ThreadID()
         }
 
         class Content(val regex: Regex) : SearchOperand("Content") {
+            override fun cacheID(): String = "regex|${regex.pattern}|"
             override fun Search(exceptions: BoardExceptions, event: Event): Boolean = regex.find(event.Text()) != null
         }
 
@@ -108,6 +133,10 @@ abstract class Mirror(
         ) : SearchOperand("Condition") {
             constructor(operator : SearchOperator, operand: SearchOperand) : this(operator, listOf(operand))
 
+            override fun cacheID() : String {
+                return "(" + operands.map { it.cacheID() }.joinToString(" ${operator.cacheID()} ") + ")"
+            }
+
             override fun Search(exceptions: BoardExceptions, event: Event): Boolean =
                     operands.foldRight(operator.initialCondition, { op, acc -> operator.combine(acc, op.Search(exceptions, event)) })
         }
@@ -116,7 +145,13 @@ abstract class Mirror(
     data class SearchParameters(
         val condition: SearchOperand = SearchOperand.QT(),
         val referenceDepth : ReferenceDepth = ReferenceDepth.None
-    )
+    ) {
+        fun cacheID() : String {
+            val id = condition.cacheID() + "-" + referenceDepth.cacheID()
+
+            return sanitizeFileName(id)
+        }
+    }
 
     data class BoardExceptions(
         val orphanThreads : List<String> = emptyList(),

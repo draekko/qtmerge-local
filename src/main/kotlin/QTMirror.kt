@@ -14,6 +14,7 @@ class QTMirror(
 ) {
     init {
         val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
+        val cacheDirectory = MIRRORDIR + File.separator + "cache"
         val mirrors = arrayListOf(
                 TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump"),
                 /*
@@ -50,12 +51,12 @@ class QTMirror(
                 TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
                 TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
                 //QCodeFagNetMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "_allQPosts"),
-                InfChMirror(mirrorDirectory, "greatawakening"),
-                InfChMirror(mirrorDirectory, "qresearch"),
-                InfChMirror(mirrorDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-                InfChMirror(mirrorDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-                InfChMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
-                FourChanMirror(mirrorDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
+                InfChMirror(mirrorDirectory, cacheDirectory, "greatawakening"),
+                InfChMirror(mirrorDirectory, cacheDirectory, "qresearch"),
+                InfChMirror(mirrorDirectory, cacheDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+                InfChMirror(mirrorDirectory, cacheDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+                InfChMirror(mirrorDirectory, cacheDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
+                FourChanMirror(mirrorDirectory, cacheDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
                 //TwitterMirror(mirrorDirectory, "JulianAssange")
                 //TwitterMirror(mirrorDirectory, "Wikileaks")
                 //TwitterMirror(mirrorDirectory, "Snowden")

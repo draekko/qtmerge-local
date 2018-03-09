@@ -1,4 +1,5 @@
 import controllers.mirror.*
+import settings.Settings.Companion.FORMATTER
 import settings.Settings.Companion.MIRRORDIR
 import settings.Settings.Companion.ZONEID
 import java.io.File
@@ -10,7 +11,8 @@ fun main(args: Array<String>) {
 
 class QTMonitor(
         mirrorLabel : String = "2018-02-15",
-        val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel
+        val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel,
+        val cacheDirectory : String = MIRRORDIR + File.separator + "cache"
 ) {
     fun Monitor() {
         // Count QT events before
@@ -24,7 +26,8 @@ class QTMonitor(
         */
 
         while(true) {
-            val startTime = ZonedDateTime.now(ZONEID).minusHours(24)
+            val startTime = ZonedDateTime.now(ZONEID).minusHours(48)
+            println("Mirroring forward from ${startTime.format(FORMATTER)}")
             val mirrors = arrayListOf(
                     TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump", startTime),
                     QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
@@ -50,8 +53,8 @@ class QTMonitor(
                     TheStoryOfQMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
                     TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
                     TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                    InfChMirror(mirrorDirectory, "greatawakening", startTime),
-                    InfChMirror(mirrorDirectory, "qresearch", startTime)
+                    InfChMirror(mirrorDirectory, cacheDirectory, "greatawakening", startTime),
+                    InfChMirror(mirrorDirectory, cacheDirectory,"qresearch", startTime)
             )
 
             // Mirror post data first

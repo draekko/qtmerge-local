@@ -11,7 +11,8 @@ fun main(args: Array<String>) {
 // Searches local mirror for data and creates reports
 class QTSearch(
         mirrorLabel : String = "2018-02-15",
-        private val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel
+        private val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel,
+        private val cacheDirectory : String = MIRRORDIR + File.separator + "cache"
 ) {
     fun Search(
             //mirrors : List<Mirror>
@@ -28,10 +29,10 @@ class QTSearch(
         // Load events that match search criteria and options
         val events : MutableList<Event> = arrayListOf()
         val params = Mirror.SearchParameters(Mirror.SearchOperand.Condition(Mirror.SearchOperator.And,
-                listOf(Mirror.SearchOperand.Content(regex), Mirror.SearchOperand.Condition(Mirror.SearchOperator.Not,
+                listOf(Mirror.SearchOperand.Content(regex), Mirror.SearchOperand.Condition(Mirror.SearchOperator.AndNot,
                         listOf(Mirror.SearchOperand.OP(), Mirror.SearchOperand.Content(Regex(""".*NEW Q archive.*""")))))))
-        events.addAll(InfChMirror(mirrorDirectory, "greatawakening").MirrorSearch(params))
-        events.addAll(InfChMirror(mirrorDirectory, "qresearch").MirrorSearch(params))
+        events.addAll(InfChMirror(mirrorDirectory, cacheDirectory, "greatawakening").MirrorSearch(params))
+        events.addAll(InfChMirror(mirrorDirectory, cacheDirectory, "qresearch").MirrorSearch(params))
         println("Loaded ${events.size} events.")
 
         println("Finding references...")

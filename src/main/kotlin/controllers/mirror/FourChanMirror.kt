@@ -19,13 +19,13 @@ import java.time.ZonedDateTime
 
 class FourChanMirror(
         mirrorDirectory : String,
+        cacheDirectory : String,
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
 ) : Mirror(mirrorDirectory, board, Source.FourChan, "anonsw") {
-    val mirrorRoot = mirrorDirectory + File.separator + dataset + File.separator + "4chan"
-    val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
-    var filesRoot = mirrorRoot + File.separator + "files"
+    val mirrorLayout = MirrorLayout(mirrorDirectory, dataset, "4chan", board)
+    val cacheLayout = MirrorLayout(cacheDirectory, dataset, "4chan", board)
     var threads : MutableList<String> = arrayListOf()
     val updatedThreads : MutableList<String> = arrayListOf()
 
@@ -395,18 +395,16 @@ class FourChanMirror(
     override fun Mirror() {
         println(">> mirror: $this")
         updatedThreads.clear()
-        if (MakeDirectory(mirrorRoot)) {
-            val filesRoot = mirrorRoot + File.separator + "files"
-
-            if (!MakeDirectory(boardRoot)) {
+        if (MakeDirectory(mirrorLayout.root)) {
+            if (!MakeDirectory(mirrorLayout.boards)) {
                 return
             }
-            if (!MakeDirectory(filesRoot)) {
+            if (!MakeDirectory(mirrorLayout.files)) {
                 return
             }
 
             threads.sortedBy{ -it.toLong() }.forEach { thread ->
-                val threadRoot = boardRoot + File.separator + thread
+                val threadRoot = mirrorLayout.boards + File.separator + thread
                 if (MakeDirectory(threadRoot)) {
                     val threadURL = URL("https://archive.4plebs.org/_/api/chan/thread/?board=pol&num=$thread")
                     val threadFile = File(threadRoot + File.separator + "$thread.json")
@@ -430,7 +428,7 @@ class FourChanMirror(
     override fun MirrorReferences() {
         println(">> mirror refs: $this")
         threads.sortedBy { -it.toLong() }.forEach { thread ->
-            val threadRoot = boardRoot + File.separator + thread
+            val threadRoot = mirrorLayout.boards + File.separator + thread
             val threadFile = File(threadRoot + File.separator + "$thread.json")
             val threadUpdated = updatedThreads.contains(thread)
 
@@ -477,8 +475,8 @@ class FourChanMirror(
         val firstNest = media.media.substring(0, 4)
         val secondNest = media.media.substring(4, 6)
         val folder = media.media.substring(0, media.media.lastIndexOf('.'))
-        val thumbFile = File(filesRoot + File.separator + firstNest + File.separator + secondNest + File.separator + folder + File.separator + media.preview_orig)
-        val fileFile = File(filesRoot + File.separator + firstNest + File.separator + secondNest + File.separator + folder + File.separator + media.media_filename_processed)
+        val thumbFile = File(mirrorLayout.files + File.separator + firstNest + File.separator + secondNest + File.separator + folder + File.separator + media.preview_orig)
+        val fileFile = File(mirrorLayout.files + File.separator + firstNest + File.separator + secondNest + File.separator + folder + File.separator + media.media_filename_processed)
 
         try {
             if (MakeDirectory(thumbFile.parentFile.absolutePath)) {
@@ -507,12 +505,11 @@ class FourChanMirror(
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableMap<String, Event> = mutableMapOf()
-        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board
 
         println(">> search: $this")
 
         threads.sortedBy { it.toLong() }.forEachIndexed { index, thread ->
-            val threadRoot = boardRoot + File.separator + thread
+            val threadRoot = mirrorLayout.boards + File.separator + thread
             val threadUpdated = updatedThreads.contains(thread)
 
             File(threadRoot).listFiles().sortedBy { -it.lastModified() }.forEach { threadFile ->

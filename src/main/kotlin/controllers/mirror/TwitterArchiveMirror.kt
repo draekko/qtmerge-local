@@ -44,7 +44,6 @@ class TwitterArchiveMirror(
                 // Update activity json if necessary
                 var shouldUpdate = false
                 try {
-                    // TODO: find out why this iterates even when there are no new tweets
                     if (tweetFile.iterate(tweetURL.readBytesDelayed())) {
                         println("  Updated tweets for $board")
                         shouldUpdate = true
