@@ -105,6 +105,8 @@ class TwitterArchiveMirror(
             }
         }
 
+        println("  >> Found ${eventList.size} events.")
+
         return eventList
     }
 }
