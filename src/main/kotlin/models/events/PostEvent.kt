@@ -1,15 +1,14 @@
 package models.events
 
-import controllers.mirror.FourChanMirror
+import controllers.mirror.FourPlebsMirror
 import controllers.mirror.InfChMirror
 import controllers.mirror.Mirror
-import models.importer.QCodeFagPost
-import models.mirror.FourChanPost
+import models.mirror.QCodeFagPost
+import models.mirror.FourPlebsPost
 import models.mirror.InfChPost
 import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.time.Instant
-import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class PostEvent(
@@ -139,36 +138,36 @@ class PostEvent(
             return postEvent
         }
 
-        fun fromFourChanPost(dataset: String, source: Mirror.Source, board: String, mirrorFile: String, fourChanPost: FourChanPost) : PostEvent {
-            val link = "https://archive.4plebs.org/$board/thread/${fourChanPost.thread_num}/#${fourChanPost.num}"
+        fun fromFourChanPost(dataset: String, source: Mirror.Source, board: String, mirrorFile: String, fourPlebsPost: FourPlebsPost) : PostEvent {
+            val link = "https://archive.4plebs.org/$board/thread/${fourPlebsPost.thread_num}/#${fourPlebsPost.num}"
             val postEvent = PostEvent(
                     mutableListOf(dataset),
                     board,
                     source,
                     mirrorFile,
-                    fourChanPost.num,
-                    fourChanPost.poster_hash?:"",
-                    fourChanPost.timestamp,
-                    fourChanPost.title?:"",
-                    fourChanPost.name?:"",
-                    fourChanPost.email?:"",
-                    fourChanPost.trip?:"",
-                    cleanHTMLText(fourChanPost.comment?:""),
+                    fourPlebsPost.num,
+                    fourPlebsPost.poster_hash?:"",
+                    fourPlebsPost.timestamp,
+                    fourPlebsPost.title?:"",
+                    fourPlebsPost.name?:"",
+                    fourPlebsPost.email?:"",
+                    fourPlebsPost.trip?:"",
+                    cleanHTMLText(fourPlebsPost.comment?:""),
                     "",
                     link,
-                    fourChanPost.thread_num,
+                    fourPlebsPost.thread_num,
                     mutableListOf(),
                     mutableListOf(),
                     makeReferenceID(link)
             )
 
-            if(fourChanPost.media != null) {
-                postEvent.images!!.add(PostEventImage(fourChanPost.media!!.media_link, fourChanPost.media!!.media_filename))
+            if(fourPlebsPost.media != null) {
+                postEvent.images!!.add(PostEventImage(fourPlebsPost.media!!.media_link, fourPlebsPost.media!!.media_filename))
             }
 
             val graphicMap = when(source) {
                 Mirror.Source.FourChan -> {
-                    FourChanMirror.EXCEPTIONS[board]!!.qgraphics
+                    FourPlebsMirror.EXCEPTIONS[board]!!.qgraphics
                 }
                 else -> listOf()
             }
@@ -213,7 +212,7 @@ class PostEvent(
             // Link graphics/maps
             val graphicMap = when(source) {
                 Mirror.Source.FourChan -> {
-                    FourChanMirror.EXCEPTIONS[board]!!.qgraphics
+                    FourPlebsMirror.EXCEPTIONS[board]!!.qgraphics
                 }
                 else -> listOf()
             }

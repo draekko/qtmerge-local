@@ -1,6 +1,6 @@
 package models.mirror
 
-data class FourChanPost(
+data class FourPlebsPost(
     var doc_id : String,
     var num : String,
     var subnum : String,

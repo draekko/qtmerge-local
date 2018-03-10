@@ -9,7 +9,9 @@ import models.mirror.InfChPost
 import models.mirror.InfChPostSet
 import models.mirror.InfChThread
 import models.mirror.InfChThreadPage
+import settings.Settings.Companion.CACHEDIR
 import settings.Settings.Companion.FORMATTER
+import settings.Settings.Companion.DATADIR
 import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.io.File
@@ -21,17 +23,15 @@ import java.time.Instant
 import java.time.ZonedDateTime
 
 class InfChMirror(
-        mirrorDirectory : String,
-        cacheDirectory : String,
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(mirrorDirectory, board, Source.InfChan, "anonsw") {
+) : Mirror(board, Source.InfChan, "anonsw") {
 
     var threads : MutableList<InfChThread> = arrayListOf()
     val updatedThreads : MutableList<InfChThread> = arrayListOf()
-    var mirrorLayout = MirrorLayout(mirrorDirectory, dataset, "8ch", board)
-    var cacheLayout = MirrorLayout(cacheDirectory, dataset, "8ch", board)
+    var mirrorLayout = MirrorLayout(DATADIR, dataset, "8ch.net", board)
+    var cacheLayout = MirrorLayout(CACHEDIR, dataset, "8ch.net", board)
     val catalogURL = URL("https://8ch.net/$board/threads.json")     // Starting around 2018-03-04 catalog.json is now threads.json
     val catalogFile = File(mirrorLayout.boards + File.separator + "threads.json")
     val archiveURL = URL("https://8ch.net/$board/archive/index.html")

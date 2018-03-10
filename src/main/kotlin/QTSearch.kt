@@ -1,19 +1,13 @@
 import controllers.mirror.InfChMirror
 import controllers.mirror.Mirror
 import models.events.Event
-import settings.Settings.Companion.MIRRORDIR
-import java.io.File
 
 fun main(args: Array<String>) {
     QTSearch().Search()
 }
 
 // Searches local mirror for data and creates reports
-class QTSearch(
-        mirrorLabel : String = "2018-02-15",
-        private val mirrorDirectory: String = MIRRORDIR + File.separator + mirrorLabel,
-        private val cacheDirectory : String = MIRRORDIR + File.separator + "cache"
-) {
+class QTSearch {
     fun Search(
             //mirrors : List<Mirror>
             // TODO: Options:
@@ -31,8 +25,8 @@ class QTSearch(
         val params = Mirror.SearchParameters(Mirror.SearchOperand.Condition(Mirror.SearchOperator.And,
                 listOf(Mirror.SearchOperand.Content(regex), Mirror.SearchOperand.Condition(Mirror.SearchOperator.AndNot,
                         listOf(Mirror.SearchOperand.OP(), Mirror.SearchOperand.Content(Regex(""".*NEW Q archive.*""")))))))
-        events.addAll(InfChMirror(mirrorDirectory, cacheDirectory, "greatawakening").MirrorSearch(params))
-        events.addAll(InfChMirror(mirrorDirectory, cacheDirectory, "qresearch").MirrorSearch(params))
+        events.addAll(InfChMirror("greatawakening").MirrorSearch(params))
+        events.addAll(InfChMirror("qresearch").MirrorSearch(params))
         println("Loaded ${events.size} events.")
 
         println("Finding references...")
@@ -40,13 +34,13 @@ class QTSearch(
         val eventRefs : MutableList<Event> = arrayListOf()
         events.forEachIndexed { index, event ->
             event.UID = index.toString()
-            event.FindReferences().forEach { event ->
-                val existingEvent = events.find { it.ReferenceID() == event.ReferenceID() }
+            event.FindReferences().forEach { ref ->
+                val existingEvent = events.find { it.ReferenceID() == ref.ReferenceID() }
                 if(existingEvent != null) {
                     eventRefs.add(existingEvent)
                 } else {
-                    if(eventRefs.find { it.ReferenceID() == event.ReferenceID() } == null) {
-                        eventRefs.add(event)
+                    if(eventRefs.find { it.ReferenceID() == ref.ReferenceID() } == null) {
+                        eventRefs.add(ref)
                     }
                 }
             }
@@ -59,7 +53,7 @@ class QTSearch(
 
         println("Creating links...")
         // Create links
-        events.sortedBy { it.Timestamp() }.forEachIndexed { index, event ->
+        events.sortedBy { it.Timestamp() }.forEach { event ->
             println("=".repeat(80))
             println(event.ReferenceID())
             println(event.Text())

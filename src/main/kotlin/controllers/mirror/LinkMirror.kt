@@ -3,10 +3,9 @@ package controllers.mirror
 import models.events.Event
 
 class LinkMirror(
-        mirrorDirectory: String,
         board : String,
         val link : String
-) : Mirror(mirrorDirectory, board, Source.LinkedData, "anonsw") {
+) : Mirror(board, Source.LinkedData, "anonsw") {
 
     override fun Mirror() {
         println(">> mirror: $this")

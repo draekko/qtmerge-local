@@ -6,8 +6,10 @@ import extensions.iterate
 import extensions.readBytesDelayed
 import models.events.Event
 import models.events.PostEvent
-import models.mirror.FourChanPost
-import models.mirror.FourChanThread
+import models.mirror.FourPlebsPost
+import models.mirror.FourPlebsThread
+import settings.Settings.Companion.CACHEDIR
+import settings.Settings.Companion.DATADIR
 import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.io.File
@@ -17,15 +19,13 @@ import java.net.URL
 import java.time.Instant
 import java.time.ZonedDateTime
 
-class FourChanMirror(
-        mirrorDirectory : String,
-        cacheDirectory : String,
+class FourPlebsMirror(
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(mirrorDirectory, board, Source.FourChan, "anonsw") {
-    val mirrorLayout = MirrorLayout(mirrorDirectory, dataset, "4chan", board)
-    val cacheLayout = MirrorLayout(cacheDirectory, dataset, "4chan", board)
+) : Mirror(board, Source.FourChan, "anonsw") {
+    val mirrorLayout = MirrorLayout(DATADIR, dataset, "4plebs.org", board)
+    val cacheLayout = MirrorLayout(CACHEDIR, dataset, "4plebs.org", board)
     var threads : MutableList<String> = arrayListOf()
     val updatedThreads : MutableList<String> = arrayListOf()
 
@@ -419,8 +419,8 @@ class FourChanMirror(
 
             // Check post files and references
             if(threadFile.exists()) {
-                val listType = object : TypeToken<Map<String, FourChanThread>>() {}.type
-                val threadMap : Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
+                val listType = object : TypeToken<Map<String, FourPlebsThread>>() {}.type
+                val threadMap : Map<String, FourPlebsThread> = Gson().fromJson(threadFile.readText(), listType)
 
                 // Check thread files and references
                 if(threadMap[thread]!!.op != null) {
@@ -452,7 +452,7 @@ class FourChanMirror(
         }
     }
 
-    fun MirrorFile(shouldUpdate: Boolean, media : FourChanPost.FourChanPostMedia) {
+    fun MirrorFile(shouldUpdate: Boolean, media : FourPlebsPost.FourChanPostMedia) {
         // Don't mirror banned files
         if(media.banned == "1") {
             return
@@ -492,7 +492,7 @@ class FourChanMirror(
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableMap<String, Event> = mutableMapOf()
-        val listType = object : TypeToken<Map<String, FourChanThread>>() {}.type
+        val listType = object : TypeToken<Map<String, FourPlebsThread>>() {}.type
 
         println(">> search: $this")
 
@@ -507,7 +507,7 @@ class FourChanMirror(
                 if(latestThread != null) {
                     if (!cacheFile.exists() || cacheFile.lastModified() < latestThread.lastModified()) {
                         println("  >> thread: $thread: updating cache")
-                        val postCache = mutableMapOf<String, FourChanPost>()
+                        val postCache = mutableMapOf<String, FourPlebsPost>()
 
                         File(threadMirrorRoot).listFiles().sortedBy { -it.lastModified() }.forEach { threadFile ->
                             if (threadFile.name.startsWith(thread) && threadFile.extension.startsWith("json")) {
@@ -515,11 +515,11 @@ class FourChanMirror(
                                 try {
                                     val error: Map<String, String> = Gson().fromJson(threadFile.readText(), object : TypeToken<Map<String, String>>() {}.type)
                                     if (error.containsKey("error")) {
-                                        return@forEachIndexed
+                                        return@forEach
                                     }
                                 } catch (e: Exception) { /* all ok, not an error */
                                 }
-                                val threadMap: Map<String, FourChanThread> = Gson().fromJson(threadFile.readText(), listType)
+                                val threadMap: Map<String, FourPlebsThread> = Gson().fromJson(threadFile.readText(), listType)
 
                                 // Search OP if it is set (should always be in mirror data, but checking just in case)
                                 if(threadMap[thread]!!.op != null) {
@@ -561,9 +561,9 @@ class FourChanMirror(
                         }
 
                         // Write cache file (OP, if found in search, is stored in posts rather than OP for cache, so null op)
-                        cacheFile.writeText(Gson().toJson(mapOf(Pair(thread, FourChanThread(null, postCache)))))
+                        cacheFile.writeText(Gson().toJson(mapOf(Pair(thread, FourPlebsThread(null, postCache)))))
                     } else {
-                        val threadMap : Map<String, FourChanThread> = Gson().fromJson(cacheFile.readText(), listType)
+                        val threadMap : Map<String, FourPlebsThread> = Gson().fromJson(cacheFile.readText(), listType)
                         if (threadMap[thread]!!.posts != null) {
                             threadMap[thread]!!.posts!!.keys.forEach {
                                 val post = threadMap[thread]!!.posts!![it]!!

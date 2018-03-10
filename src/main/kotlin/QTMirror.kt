@@ -1,66 +1,60 @@
 import controllers.mirror.*
-import settings.Settings.Companion.MIRRORDIR
 import settings.Settings.Companion.STARTTIME
 import settings.Settings.Companion.ZONEID
-import java.io.File
 import java.time.ZonedDateTime
 
 fun main(args: Array<String>) {
     QTMirror()
 }
 
-class QTMirror(
-    mirrorLabel : String = "2018-02-15"
-) {
+class QTMirror {
     init {
-        val mirrorDirectory = MIRRORDIR + File.separator + mirrorLabel
-        val cacheDirectory = MIRRORDIR + File.separator + "cache"
         val mirrors = arrayListOf(
-                TwitterArchiveMirror(mirrorDirectory, "realDonaldTrump"),
+                TwitterArchiveMirror("realDonaldTrump"),
                 /*
-                TwitterArchiveMirror(mirrorDirectory, "hillaryclinton"),
-                TwitterArchiveMirror(mirrorDirectory, "senatorsessions"),
-                TwitterArchiveMirror(mirrorDirectory, "POTUS"),
-                TwitterArchiveMirror(mirrorDirectory, "genflynn"),
-                TwitterArchiveMirror(mirrorDirectory, "govpencein"),
-                TwitterArchiveMirror(mirrorDirectory, "vp"),
-                TwitterArchiveMirror(mirrorDirectory, "repmikepompeo"),
-                TwitterArchiveMirror(mirrorDirectory, "seanhannity"),
+                TwitterArchiveMirror("hillaryclinton"),
+                TwitterArchiveMirror("senatorsessions"),
+                TwitterArchiveMirror("POTUS"),
+                TwitterArchiveMirror("genflynn"),
+                TwitterArchiveMirror("govpencein"),
+                TwitterArchiveMirror("vp"),
+                TwitterArchiveMirror("repmikepompeo"),
+                TwitterArchiveMirror("seanhannity"),
                 */
-                QCodeFagMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
-                QCodeFagMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
-                QCodeFagMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
-                QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
-                QCodeFagMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan,"cbtsNonTrip8chanPosts"),
-                QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
-                QCodeFagMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
-                QAnonMapMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
-                TheStoryOfQMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "pol4chanPosts"),
-                //QCodeFagNetMirror(mirrorDirectory, "pol", Mirror.Source.FourChan, "_allQPosts"),
-                InfChMirror(mirrorDirectory, cacheDirectory, "greatawakening"),
-                InfChMirror(mirrorDirectory, cacheDirectory, "qresearch"),
-                InfChMirror(mirrorDirectory, cacheDirectory, "thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-                InfChMirror(mirrorDirectory, cacheDirectory, "cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
-                InfChMirror(mirrorDirectory, cacheDirectory, "pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
-                FourChanMirror(mirrorDirectory, cacheDirectory, "pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
-                //TwitterMirror(mirrorDirectory, "JulianAssange")
-                //TwitterMirror(mirrorDirectory, "Wikileaks")
-                //TwitterMirror(mirrorDirectory, "Snowden")
-                //TwitterMirror(mirrorDirectory, "Snowden")
+                QCodeFagMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
+                QCodeFagMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
+                QCodeFagMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
+                QCodeFagMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
+                QCodeFagMirror("cbts", Mirror.Source.InfChan,"cbtsNonTrip8chanPosts"),
+                QCodeFagMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
+                QCodeFagMirror("pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                QAnonMapMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
+                QAnonMapMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
+                QAnonMapMirror("qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
+                QAnonMapMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
+                QAnonMapMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
+                QAnonMapMirror("cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
+                QAnonMapMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
+                QAnonMapMirror("pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                TheStoryOfQMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
+                TheStoryOfQMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts"),
+                TheStoryOfQMirror("qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts"),
+                TheStoryOfQMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts"),
+                TheStoryOfQMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts"),
+                TheStoryOfQMirror("cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts"),
+                TheStoryOfQMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
+                TheStoryOfQMirror("pol", Mirror.Source.FourChan, "pol4chanPosts"),
+                //QCodeFagNetMirror("pol", Mirror.Source.FourChan, "_allQPosts"),
+                InfChMirror("greatawakening"),
+                InfChMirror("qresearch"),
+                InfChMirror("thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+                InfChMirror("cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
+                InfChMirror("pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),
+                FourPlebsMirror("pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID))
+                //TwitterMirror("JulianAssange")
+                //TwitterMirror("Wikileaks")
+                //TwitterMirror("Snowden")
+                //TwitterMirror("Snowden")
         )
 
         // Mirror post data first

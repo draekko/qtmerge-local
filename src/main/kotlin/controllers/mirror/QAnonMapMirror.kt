@@ -5,8 +5,9 @@ import extensions.iterate
 import extensions.readBytesDelayed
 import models.events.Event
 import models.events.PostEvent
-import models.importer.QCodeFagPost
+import models.mirror.QCodeFagPost
 import models.mirror.InfChThread
+import settings.Settings.Companion.DATADIR
 import settings.Settings.Companion.ZONEID
 import java.io.File
 import java.io.FileNotFoundException
@@ -15,20 +16,17 @@ import java.time.Instant
 import java.time.ZonedDateTime
 
 class QAnonMapMirror(
-        mirrorDirectory : String,
         board : String,
         source : Source,
         val boardFileID : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(mirrorDirectory, board, source, "qanonmap") {
+) : Mirror(board, source, "qanonmap") {
     var threads: MutableList<InfChThread> = mutableListOf()
     val updatedThreads: MutableList<InfChThread> = mutableListOf()
-    var mirrorRoot = mirrorDirectory + File.separator + dataset
-    var boardRoot = mirrorRoot + File.separator + "boards" + File.separator + boardFileID
-    var filesRoot = mirrorRoot + File.separator + "files"
+    var mirrorLayout = MirrorLayout(DATADIR, dataset, "github.com", boardFileID)
     val exceptions = when(source) {
-        Source.FourChan -> FourChanMirror.Companion.EXCEPTIONS[board]!!
+        Source.FourChan -> FourPlebsMirror.Companion.EXCEPTIONS[board]!!
         Source.InfChan -> InfChMirror.Companion.EXCEPTIONS[board]!!
         else -> BoardExceptions()
     }
@@ -36,18 +34,18 @@ class QAnonMapMirror(
     override fun Mirror() {
         println(">> mirror: $this")
         updatedThreads.clear()
-        if (MakeDirectory(mirrorRoot)) {
-            if (!MakeDirectory(boardRoot)) {
+        if (MakeDirectory(mirrorLayout.root)) {
+            if (!MakeDirectory(mirrorLayout.boards)) {
                 return
             }
-            if (!MakeDirectory(filesRoot)) {
+            if (!MakeDirectory(mirrorLayout.files)) {
                 return
             }
 
             //val catalogURL = URL("http://qanonmap.github.io/data/$board.json")
             //val catalogURL = URL("https://github.com/qanonmap/qanonmap.github.io/raw/master/data/$board.json")
             val catalogURL = URL("https://github.com/qanonmap/qanonmap.github.io/raw/master/data/json/$boardFileID.json")
-            val catalogFile = File(boardRoot + File.separator + "$boardFileID.json")
+            val catalogFile = File(mirrorLayout.boards + File.separator + "$boardFileID.json")
 
             // Update catalog json if necessary
             try {
@@ -68,9 +66,7 @@ class QAnonMapMirror(
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
-        val mirrorRoot = mirrorDirectory + File.separator + dataset
-        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + boardFileID
-        val catalogFile = File(boardRoot + File.separator + "$boardFileID.json")
+        val catalogFile = File(mirrorLayout.boards + File.separator + "$boardFileID.json")
 
         println(">> search: $this")
         val posts = Gson().fromJson(catalogFile.readText(), Array<QCodeFagPost>::class.java)

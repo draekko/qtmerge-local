@@ -2,7 +2,7 @@ package models.mirror
 
 
 
-data class FourChanBoardActivity(
+data class FourPlebsBoardActivity(
         var statistic : ActivityStastic,
         var data : ActivityData
 ) {

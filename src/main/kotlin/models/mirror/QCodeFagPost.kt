@@ -1,4 +1,4 @@
-package models.importer
+package models.mirror
 
 data class QCodeFagPost(
         var host : String,

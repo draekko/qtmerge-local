@@ -6,6 +6,7 @@ import extensions.readBytesDelayed
 import models.events.Event
 import models.events.TweetEvent
 import models.mirror.TwitterArchiveTweet
+import settings.Settings.Companion.DATADIR
 import settings.Settings.Companion.ZONEID
 import java.io.File
 import java.io.FileNotFoundException
@@ -14,32 +15,29 @@ import java.time.Instant
 import java.time.ZonedDateTime
 
 class TwitterArchiveMirror(
-        outputDirectory : String,
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(outputDirectory, board, Source.Twitter, "twitterarchive") {
+) : Mirror(board, Source.Twitter, "twitterarchive") {
+    var mirrorLayout = MirrorLayout(DATADIR, dataset, "trumptwitterarchive.com", board.toLowerCase())
 
     override fun Mirror() {
         println(">> mirror: $this")
 
-        val mirrorRoot = mirrorDirectory + File.separator + dataset
-        if (MakeDirectory(mirrorRoot)) {
-            val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
-            val filesRoot = mirrorRoot + File.separator + "files"
+        if (MakeDirectory(mirrorLayout.root)) {
             val years = (2017..2018)
 
-            if (!MakeDirectory(boardRoot)) {
+            if (!MakeDirectory(mirrorLayout.boards)) {
                 return
             }
-            if (!MakeDirectory(filesRoot)) {
+            if (!MakeDirectory(mirrorLayout.files)) {
                 return
             }
 
             years.forEachIndexed { index, year ->
                 println("  >> thread: $year: ${index + 1} / ${years.count()} (% ${Math.round(index.toFloat()/years.count()*100)})")
                 val tweetURL = URL("http://trumptwitterarchive.com/data/${board.toLowerCase()}/$year.json")
-                val tweetFile = File(boardRoot + File.separator + "$year.json")
+                val tweetFile = File(mirrorLayout.boards + File.separator + "$year.json")
 
                 // Update activity json if necessary
                 var shouldUpdate = false
@@ -56,7 +54,7 @@ class TwitterArchiveMirror(
                 if(shouldUpdate) {
                     val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
                     tweets.forEach { tweet ->
-                        MirrorReferences(filesRoot, tweet.id_str, tweet.text)
+                        MirrorReferences(mirrorLayout.files, tweet.id_str, tweet.text)
                     }
                 }
             }
@@ -82,13 +80,11 @@ class TwitterArchiveMirror(
 
     override fun MirrorSearch(params: SearchParameters): List<Event> {
         val eventList: MutableList<Event> = arrayListOf()
-        val mirrorRoot = mirrorDirectory + File.separator + dataset
-        val boardRoot = mirrorRoot + File.separator + "boards" + File.separator + board.toLowerCase()
         val years = (2017..2018)
 
         println(">> search: $this")
         years.forEachIndexed { index, year ->
-            val tweetFile = File(boardRoot + File.separator + "$year.json")
+            val tweetFile = File(mirrorLayout.boards + File.separator + "$year.json")
 
             val tweets = Gson().fromJson(tweetFile.readText(), Array<TwitterArchiveTweet>::class.java)
             tweets.forEach { tweet ->

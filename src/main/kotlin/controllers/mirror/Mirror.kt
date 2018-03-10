@@ -10,7 +10,6 @@ import java.time.Instant
 import java.time.ZonedDateTime
 
 abstract class Mirror(
-        val mirrorDirectory : String,
         val board : String,
         val source : Source,
         val dataset: String
