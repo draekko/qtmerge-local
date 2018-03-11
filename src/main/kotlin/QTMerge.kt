@@ -274,7 +274,7 @@ class QTMerge(
             |           $qmaps
             |       </div>
             |       <div class="derived">
-            |           <a href="catalog.html">Thread Catalog</a> | <a href="abbreviations.html">Abbreviations</a> | <b>Work in progress:</b> <i>Auto update</i> | <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
+            |           <a href="catalog.html">Thread Catalog</a> | <a href="abbreviations.html">Abbreviations</a> | <b>Work in progress:</b> <i>Dataset Downloads</i> | <i>Thread Maps</i> | <i>Search/Filter</i>
             |       </div>
             |       <div class="menu">
             |          <form>

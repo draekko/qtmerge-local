@@ -1,7 +1,9 @@
 import controllers.mirror.*
 import settings.Settings.Companion.FORMATTER
 import settings.Settings.Companion.ZONEID
+import java.io.File
 import java.time.ZonedDateTime
+import java.util.concurrent.TimeUnit
 
 fun main(args: Array<String>) {
     QTMonitor().Monitor()
@@ -9,15 +11,6 @@ fun main(args: Array<String>) {
 
 class QTMonitor {
     fun Monitor() {
-        // Count QT events before
-        /*
-        println("\nCounting QT Events")
-        var count = 0
-        mirrors.forEach {
-            count += it.MirrorSearch().count()
-        }
-        println(">> $count events")
-        */
 
         while(true) {
             val startTime = ZonedDateTime.now(ZONEID).minusHours(48)
@@ -51,6 +44,14 @@ class QTMonitor {
                     InfChMirror("qresearch", startTime)
             )
 
+            // Count QT events before
+            println("\nCounting QT Events")
+            var count = 0
+            mirrors.forEach {
+                count += it.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
+            }
+            println(">> $count events")
+
             // Mirror post data first
             println("\nMirroring Events")
             mirrors.forEach {
@@ -61,6 +62,30 @@ class QTMonitor {
                 }
             }
 
+            // Count QT events after
+            println("\nCounting QT Events")
+            var postcount = 0
+            mirrors.forEach {
+              postcount += it.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
+            }
+            println(">> $postcount events")
+
+            // Run QT Merge and deploy if counts differ
+            if(count != postcount) {
+                println("\nEvent counts differ, merging")
+                QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge").ExportHtml()
+                println("\nDeploying")
+                ProcessBuilder(listOf("./deploy.sh", System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod/qtmerge/"))
+                    .directory(File(System.getProperty("user.dir")))
+                    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .start()
+                    .waitFor(15, TimeUnit.MINUTES)
+            } else {
+                println("\nEvent count unchanged.")
+            }
+            count = postcount
+
             // Mirror post references second
             println("\nMirroring Event References")
             mirrors.forEach {
@@ -70,27 +95,6 @@ class QTMonitor {
                     println(e)
                 }
             }
-
-            /*
-              // Count QT events after
-              println("\nCounting QT Events")
-              var postcount = 0
-              mirrors.forEach {
-                  postcount += it.MirrorSearch().count()
-              }
-              println(">> $postcount events")
-
-              // Run QT Merge and deploy if counts differ
-              if(count != postcount) {
-                  println("\nEvent counts differ, merging")
-                  QTMerge(mirrorDirectory = System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge").ExportHtml()
-                  println("\nDeploying")
-                  // TODO: run delpoy.sh
-              } else {
-                  println("\nEvent count unchanged.")
-              }
-              count = postcount
-              */
 
             println("\nSleeping...")
             Thread.sleep(60000)

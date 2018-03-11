@@ -4,8 +4,7 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/kotlin" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/data/QCodefag.github.io" />
-      <excludeFolder url="file://$MODULE_DIR$/data/qanonmap.github.io" />
+      <excludeFolder url="file://$MODULE_DIR$/anonsw.github.io-prod" />
       <excludeFolder url="file://$MODULE_DIR$/mirror" />
       <excludeFolder url="file://$MODULE_DIR$/results" />
     </content>
