@@ -22,9 +22,9 @@ fun main(args: Array<String>) {
 }
 
 class QTMerge(
-    var outputDirectory : String = System.getProperty("user.dir") + File.separator + "anonsw.github.io" + File.separator + "qtmerge"
-) {
+    var outputDirectory : String = System.getProperty("user.dir") + File.separator + "anonsw.github.io" + File.separator + "qtmerge",
     var mirrors : MutableList<MirrorConfig> = arrayListOf()
+) {
     var events : MutableList<Event> = arrayListOf()
     var threads : MutableList<Event> = arrayListOf()
 
@@ -39,12 +39,6 @@ class QTMerge(
 
     init {
         LoadMirrors()
-        LoadEvents()
-        LoadCatalog()
-        File(outputDirectory).mkdirs()
-
-        println("Total Events: ${events.size}")
-        println("Total Threads: ${threads.size}")
     }
 
     fun LoadMirrors() {
@@ -82,40 +76,44 @@ class QTMerge(
     }
 
     fun LoadEvents() {
-        mirrors.forEach {
-            if (it.primarySource) {
-                events.addAll(it.mirror.MirrorSearch())
-            } else {
-                it.mirror.MirrorSearch().forEach { event ->
-                    MergeEvent(events, event, it.mirror.dataset)
+        if(events.isEmpty()) {
+            mirrors.forEach {
+                if (it.primarySource) {
+                    events.addAll(it.mirror.MirrorSearch())
+                } else {
+                    it.mirror.MirrorSearch().forEach { event ->
+                        MergeEvent(events, event, it.mirror.dataset)
+                    }
                 }
             }
-        }
 
-        events.sortBy { it.Timestamp().toEpochSecond() }
+            events.sortBy { it.Timestamp().toEpochSecond() }
 
-        // Enumerate id's
-        events.forEachIndexed { index, event ->
-            event.UID = index.toString()
+            // Enumerate id's
+            events.forEachIndexed { index, event ->
+                event.UID = index.toString()
+            }
         }
     }
 
     fun LoadCatalog() {
-        mirrors.forEach {
-            if(it.primarySource) {
-                threads.addAll(it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.OP())))
-            } else {
-                it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.OP())).forEach { event ->
-                    MergeEvent(threads, event, it.mirror.dataset)
+        if(threads.isEmpty()) {
+            mirrors.forEach {
+                if (it.primarySource) {
+                    threads.addAll(it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.OP())))
+                } else {
+                    it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.OP())).forEach { event ->
+                        MergeEvent(threads, event, it.mirror.dataset)
+                    }
                 }
             }
-        }
 
-        threads.sortBy { -it.Timestamp().toEpochSecond() }
+            threads.sortBy { -it.Timestamp().toEpochSecond() }
 
-        // Enumerate id's
-        threads.forEachIndexed { index, thread ->
-            thread.UID = index.toString()
+            // Enumerate id's
+            threads.forEachIndexed { index, thread ->
+                thread.UID = index.toString()
+            }
         }
     }
 
@@ -137,6 +135,7 @@ class QTMerge(
     }
 
     fun ExportJson() {
+        LoadEvents()
         val minimalGson = Gson()
         val prettyGson = GsonBuilder().setPrettyPrinting().create()
         val timestamp = ZonedDateTime.now(ZONEID).format(FORMATTER)
@@ -191,6 +190,13 @@ class QTMerge(
         """.trimMargin()
 
     fun ExportHtml() {
+        LoadEvents()
+        LoadCatalog()
+        File(outputDirectory).mkdirs()
+
+        println("Total Events: ${events.size}")
+        println("Total Threads: ${threads.size}")
+
         val dsout = File("$outputDirectory/datasets.html").outputStream().bufferedWriter()
         val graphicrows = PostEvent.GRAPHICS.mapIndexed { index, graphic -> """
             |<tr>

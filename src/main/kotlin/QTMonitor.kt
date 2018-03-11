@@ -11,6 +11,7 @@ fun main(args: Array<String>) {
 
 class QTMonitor {
     fun Monitor() {
+        val qtmerge = QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge")
 
         while(true) {
             val startTime = ZonedDateTime.now(ZONEID).minusHours(48)
@@ -47,8 +48,8 @@ class QTMonitor {
             // Count QT events before
             println("\nCounting QT Events")
             var count = 0
-            mirrors.forEach {
-                count += it.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
+            qtmerge.mirrors.forEach {
+                count += it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
             }
             println(">> $count events")
 
@@ -65,15 +66,16 @@ class QTMonitor {
             // Count QT events after
             println("\nCounting QT Events")
             var postcount = 0
-            mirrors.forEach {
-              postcount += it.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
+            qtmerge.mirrors.forEach {
+                postcount += it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
             }
             println(">> $postcount events")
 
             // Run QT Merge and deploy if counts differ
             if(count != postcount) {
                 println("\nEvent counts differ, merging")
-                QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge").ExportHtml()
+                qtmerge.ExportHtml()
+                qtmerge.ExportJson()
                 println("\nDeploying")
                 ProcessBuilder(listOf("./deploy.sh", System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod/qtmerge/"))
                     .directory(File(System.getProperty("user.dir")))
