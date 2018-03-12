@@ -9,7 +9,7 @@ if [ -z "$1" ]; then
 else
 
 	cd "$1" && \
-	git commit ${OPTS:-} -a -m "Auto TQ Update" && \
+	git commit ${OPTS:-} -a -m "QT Update" && \
 	git push ${OPTS:-}
 
 fi
