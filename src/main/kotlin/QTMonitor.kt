@@ -11,6 +11,7 @@ fun main(args: Array<String>) {
 
 class QTMonitor {
     fun Monitor() {
+        val countFile = File(System.getProperty("user.dir") + File.separator + ".qtmerge.cnt")
         val qtmerge = QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge")
 
         while(true) {
@@ -45,11 +46,11 @@ class QTMonitor {
                     InfChMirror("qresearch", startTime)
             )
 
-            // Count QT events before
-            println("\nCounting QT Events")
+            // Load previous count
             var count = 0
-            qtmerge.mirrors.forEach {
-                count += it.mirror.MirrorSearch(Mirror.SearchParameters(Mirror.SearchOperand.QT())).count()
+            println("\nLoading Previous QT Event Count")
+            if(countFile.exists()) {
+                count = countFile.readText().toInt()
             }
             println(">> $count events")
 
@@ -74,6 +75,12 @@ class QTMonitor {
             // Run QT Merge and deploy if counts differ
             if(count != postcount) {
                 println("\nEvent counts differ, merging")
+                ProcessBuilder(listOf("git", "pull"))
+                        .directory(File(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod/qtmerge/"))
+                        .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                        .redirectError(ProcessBuilder.Redirect.INHERIT)
+                        .start()
+                        .waitFor(15, TimeUnit.MINUTES)
                 qtmerge.ExportHtml()
                 qtmerge.ExportJson()
                 println("\nDeploying")
@@ -83,10 +90,11 @@ class QTMonitor {
                     .redirectError(ProcessBuilder.Redirect.INHERIT)
                     .start()
                     .waitFor(15, TimeUnit.MINUTES)
+
+                countFile.writeText(postcount.toString())
             } else {
                 println("\nEvent count unchanged.")
             }
-            count = postcount
 
             // Mirror post references second
             println("\nMirroring Event References")

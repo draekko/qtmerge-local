@@ -6,6 +6,7 @@ import controllers.mirror.Mirror
 import models.mirror.QCodeFagPost
 import models.mirror.FourPlebsPost
 import models.mirror.InfChPost
+import models.mirror.ReferenceCache
 import settings.Settings.Companion.ZONEID
 import utils.HTML.Companion.cleanHTMLText
 import java.time.Instant
@@ -227,16 +228,21 @@ class PostEvent(
 
     // Example with both good and bad ref link in data:
     // "<p class=\"body-line ltr \"><a onclick=\"highlightReply('567454', event);\" href=\"\/qresearch\/res\/567140.html#567454\">&gt;&gt;567454<\/a><\/p><p class=\"body-line ltr \">These peo&gt;&gt;567493<\/p><p class=\"body-line ltr \">ple are stupid.<\/p><p class=\"body-line ltr \">Wait for Russia\/China reports.<\/p><p class=\"body-line ltr \">Sabotage.<\/p><p class=\"body-line ltr \">Investigation.<\/p><p class=\"body-line ltr \">Strike 99999999.<\/p><p class=\"body-line empty \"><\/p><p class=\"body-line ltr \">Q<\/p>"
-    override fun FindReferences() : List<Event> {
-        /*
+    override fun FindReferences() : List<Pair<ReferenceCache.ReferenceType, String>> {
+        val refs = mutableListOf<Pair<ReferenceCache.ReferenceType, String>>()
         // Find post references
-        if(!text.isNullOrEmpty()) {
-            Regex(""".*>>(\d+).*""").findAll(text ?: "").forEach {
+        if(text.isNotEmpty()) {
+            // Board refs
+            Regex(""".*>>(\d+).*""").findAll(text).forEach {
+                refs.add(Pair(ReferenceCache.ReferenceType.BoardPost, it.groupValues[1]))
+            }
+            // Site refs
+            Regex(""".*>>>/?(\w+/\d+).*""").findAll(text).forEach {
+                refs.add(Pair(ReferenceCache.ReferenceType.SitePost, it.groupValues[1]))
             }
         }
-        */
 
-        return emptyList()
+        return refs
     }
 
     override fun ID(): String = id

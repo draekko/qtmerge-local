@@ -24,6 +24,11 @@ abstract class Mirror(
             var files : String = root + File.separator + "files"
     )
 
+    class MirrorConfig(
+            val mirror : Mirror,
+            val primarySource : Boolean
+    )
+
     enum class ReferenceDepth {
         None,
         Shallow,
@@ -74,6 +79,11 @@ abstract class Mirror(
     ) {
         abstract fun cacheID() : String
         abstract fun Search(exceptions: BoardExceptions, event: Event) : Boolean
+
+        class All : SearchOperand("All") {
+            override fun cacheID(): String  = name
+            override fun Search(exceptions: BoardExceptions, event: Event): Boolean = true
+        }
 
         class IDs(val ids : MutableList<String>) : SearchOperand("IDs") {
             override fun cacheID(): String = "$name:" + ids.joinToString(",")
@@ -158,7 +168,8 @@ abstract class Mirror(
         val qanonPosts : List<String> = emptyList(),
         val qstopTimes : MutableMap<String, ZonedDateTime> = mutableMapOf(),
         val nonqPosts : List<String> = emptyList(),
-        val qgraphics : List<Pair<String, List<String>>> = emptyList()
+        val qgraphics : List<Pair<String, List<String>>> = emptyList(),
+        val notablePosts : List<String> = emptyList()
     )
 
     abstract fun Mirror()

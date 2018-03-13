@@ -29,28 +29,6 @@ class QTSearch {
         events.addAll(InfChMirror("qresearch").MirrorSearch(params))
         println("Loaded ${events.size} events.")
 
-        println("Finding references...")
-        // Enumerate events and find references
-        val eventRefs : MutableList<Event> = arrayListOf()
-        events.forEachIndexed { index, event ->
-            event.UID = index.toString()
-            event.FindReferences().forEach { ref ->
-                val existingEvent = events.find { it.ReferenceID() == ref.ReferenceID() }
-                if(existingEvent != null) {
-                    eventRefs.add(existingEvent)
-                } else {
-                    if(eventRefs.find { it.ReferenceID() == ref.ReferenceID() } == null) {
-                        eventRefs.add(ref)
-                    }
-                }
-            }
-        }
-        // Enumerate references starting at end of matching events
-        eventRefs.forEachIndexed { index, event ->
-            event.UID = (events.size + index).toString()
-        }
-        println("Found references.")
-
         println("Creating links...")
         // Create links
         events.sortedBy { it.Timestamp() }.forEach { event ->

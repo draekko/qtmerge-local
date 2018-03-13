@@ -3,6 +3,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import controllers.mirror.*
 import models.events.Event
+import models.events.Event.Companion.MergeEvent
 import models.events.PostEvent
 import models.q.Abbreviations
 import settings.Settings.Companion.FORMATTER
@@ -23,7 +24,7 @@ fun main(args: Array<String>) {
 
 class QTMerge(
     var outputDirectory : String = System.getProperty("user.dir") + File.separator + "anonsw.github.io" + File.separator + "qtmerge",
-    var mirrors : MutableList<MirrorConfig> = arrayListOf()
+    var mirrors : MutableList<Mirror.MirrorConfig> = arrayListOf()
 ) {
     var events : MutableList<Event> = arrayListOf()
     var threads : MutableList<Event> = arrayListOf()
@@ -32,11 +33,6 @@ class QTMerge(
         val ROLLBACKDAYS = 111L
     }
 
-    class MirrorConfig(
-        val mirror : Mirror,
-        val primarySource : Boolean
-    )
-
     init {
         LoadMirrors()
     }
@@ -44,34 +40,34 @@ class QTMerge(
     fun LoadMirrors() {
         mirrors.addAll(listOf(
             // Twitter Archive
-            MirrorConfig(TwitterArchiveMirror("realDonaldTrump", STARTTIME), true),
+            Mirror.MirrorConfig(TwitterArchiveMirror("realDonaldTrump", STARTTIME), true),
 
             // Anonsw
-            MirrorConfig(FourPlebsMirror("pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror("pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror("cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror("thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
-            MirrorConfig(InfChMirror("greatawakening", STARTTIME), true),
-            MirrorConfig(InfChMirror("qresearch", STARTTIME), true),
+            Mirror.MirrorConfig(FourPlebsMirror("pol", STARTTIME, ZonedDateTime.of(2017, 12, 14, 0, 0, 0, 0, ZONEID)), true),
+            Mirror.MirrorConfig(InfChMirror("pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)), true),
+            Mirror.MirrorConfig(InfChMirror("cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
+            Mirror.MirrorConfig(InfChMirror("thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
+            Mirror.MirrorConfig(InfChMirror("greatawakening", STARTTIME), true),
+            Mirror.MirrorConfig(InfChMirror("qresearch", STARTTIME), true),
 
             // QCodeFag
-            MirrorConfig(QCodeFagMirror("pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
-            MirrorConfig(QCodeFagMirror("cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QCodeFagMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QCodeFagMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QCodeFagMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QCodeFagMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QCodeFagMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QCodeFagMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME), false),
 
             // QAnonMap
-            MirrorConfig(QAnonMapMirror("pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME), false),
-            MirrorConfig(QAnonMapMirror("qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts", STARTTIME), false)
+            Mirror.MirrorConfig(QAnonMapMirror("pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("cbts", Mirror.Source.InfChan, "cbtsNonTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("cbts", Mirror.Source.InfChan, "cbtsTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("thestorm", Mirror.Source.InfChan, "thestormTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("qresearch", Mirror.Source.InfChan, "qresearchTrip8chanPosts", STARTTIME), false),
+            Mirror.MirrorConfig(QAnonMapMirror("qresearch", Mirror.Source.InfChan, "qresearchNonTrip8chanPosts", STARTTIME), false)
         ))
     }
 
@@ -114,23 +110,6 @@ class QTMerge(
             threads.forEachIndexed { index, thread ->
                 thread.UID = index.toString()
             }
-        }
-    }
-
-    fun MergeEvent(eventList: MutableList<Event>, event: Event, dataset : String) {
-        val existingEvent = eventList.find { it.Board() == event.Board() && it.ID() == event.ID() && (it.Link() == event.Link() || it.Timestamp() == event.Timestamp()) }
-        if(existingEvent == null) {
-            eventList.add(event)
-        } else {
-            // TODO: also note any differences from existing event
-            //      ThreadID
-            //      Link
-            //      Timestamp
-            //      Name
-            //      Trip
-            //      Subject
-            //      Text
-            existingEvent.datasets.add(dataset)
         }
     }
 
@@ -381,6 +360,7 @@ class QTMerge(
             qcat.close()
         }
 
+        // Abbreviations
         val aout = File("$outputDirectory/abbreviations.html").outputStream().bufferedWriter()
         aout.append(MakeHeader("Abbreviations", "margin-top:0;"))
         aout.append("""
@@ -399,6 +379,18 @@ class QTMerge(
         }
         aout.append("</tbody></table></body></html>")
         aout.close()
+
+        // Notable posts
+        val nout = File("$outputDirectory/notables.html").outputStream().bufferedWriter()
+        nout.append(MakeHeader("Notable Posts", "margin-top:0;"))
+        nout.append("""
+            |   <a href="./">&Lt; qtmerge</a><br>
+            |<table id="notablePosts">
+            |<thead>
+            |</thead>
+            |<tbody>
+            """.trimMargin())
+        nout.close()
     }
 
     fun MakeEventRow(event: Event, count : Int, emitOffset: Boolean = true) : String {

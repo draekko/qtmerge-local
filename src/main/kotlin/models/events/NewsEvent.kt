@@ -2,6 +2,7 @@ package models.events
 
 import controllers.mirror.Mirror
 import models.events.Event
+import models.mirror.ReferenceCache
 import settings.Settings.Companion.ZONEID
 import java.time.Instant
 import java.time.ZoneId
@@ -33,7 +34,7 @@ class NewsEvent(
 
     override fun ReferenceID(): String = url
 
-    override fun FindReferences(): List<Event> {
+    override fun FindReferences(): List<Pair<ReferenceCache.ReferenceType, String>> {
         return emptyList()
     }
 

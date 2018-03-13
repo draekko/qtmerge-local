@@ -1,6 +1,7 @@
 package models.events
 
 import controllers.mirror.Mirror
+import models.mirror.ReferenceCache
 import models.mirror.TwitterArchiveTweet
 import settings.Settings.Companion.ZONEID
 import java.time.ZoneId
@@ -56,7 +57,7 @@ class TweetEvent(
 
     override fun ReferenceID(): String = Link()
 
-    override fun FindReferences() : List<Event> {
+    override fun FindReferences() : List<Pair<ReferenceCache.ReferenceType, String>> {
         return emptyList()
     }
 
