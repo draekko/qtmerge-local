@@ -12,7 +12,7 @@ class Settings {
         val DATADIR = MIRRORROOT + File.separator + "data"
         val CACHEDIR = MIRRORROOT + File.separator + "cache"
         val ZONEID = ZoneId.of("US/Eastern")
-        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 16, 44, 28, 0, ZONEID)
+        val STARTTIME : ZonedDateTime = ZonedDateTime.of(2017, 10, 28, 10, 36, 31, 0, ZONEID)
         val FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
     }
 }

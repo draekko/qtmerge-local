@@ -47,6 +47,7 @@ class QTMirror {
                 //QCodeFagNetMirror("pol", Mirror.Source.FourChan, "_allQPosts"),
                 InfChMirror("greatawakening"),
                 InfChMirror("qresearch"),
+                InfChMirror("comms"),
                 InfChMirror("thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
                 InfChMirror("cbts", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)),
                 InfChMirror("pol", STARTTIME, ZonedDateTime.of(2018, 2, 15, 0, 0, 0, 0, ZONEID)),

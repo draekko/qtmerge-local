@@ -20,7 +20,8 @@ class TweetEvent(
         val in_reply_to_user_id_str : String?,
         val favorite_count : Long,
         val is_retweet : Boolean,
-        val retweet_board: String
+        val retweet_board: String,
+        private var refirenceID : String = listOf("Tweet", board, id_str).joinToString("-")
 ) : Event("Tweet", datasets, board, source, mirrorFile) {
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy")
@@ -55,7 +56,7 @@ class TweetEvent(
         return "http://twitter.com/$board/status/$id_str"
     }
 
-    override fun ReferenceID(): String = Link()
+    override fun ReferenceID(): String = refirenceID
 
     override fun FindReferences() : List<Pair<ReferenceCache.ReferenceType, String>> {
         return emptyList()

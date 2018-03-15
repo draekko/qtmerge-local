@@ -27,6 +27,7 @@ class QTSearch {
                         listOf(Mirror.SearchOperand.OP(), Mirror.SearchOperand.Content(Regex(""".*NEW Q archive.*""")))))))
         events.addAll(InfChMirror("greatawakening").MirrorSearch(params))
         events.addAll(InfChMirror("qresearch").MirrorSearch(params))
+        events.addAll(InfChMirror("comms").MirrorSearch(params))
         println("Loaded ${events.size} events.")
 
         println("Creating links...")

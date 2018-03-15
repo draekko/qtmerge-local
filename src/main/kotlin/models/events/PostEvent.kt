@@ -30,7 +30,7 @@ class PostEvent(
         var threadId : String,
         var images : MutableList<PostEventImage>,
         var inGraphics: MutableList<String>,
-        private var referenceID : String
+        private var referenceID : String = listOf("Post", source, board, id).joinToString("-")        //DatatypeConverter.printHexBinary(MD5.digest(link.toByteArray()))
 ) : Event("Post", datasets, board, source, mirrorFile) {
 
     data class PostEventImage(
@@ -92,7 +92,6 @@ class PostEvent(
                     "2?")
         )
 
-        fun makeReferenceID(link : String) = link //DatatypeConverter.printHexBinary(MD5.digest(link.toByteArray()))
 
         fun fromInfChPost(dataset : String, source: Mirror.Source, board: String, mirrorFile: String, infChPost: InfChPost) : PostEvent {
             val threadId = if(infChPost.resto == 0L) infChPost.no else infChPost.resto
@@ -114,8 +113,7 @@ class PostEvent(
                     link,
                     threadId.toString(),
                     mutableListOf(),
-                    mutableListOf(),
-                    makeReferenceID(link)
+                    mutableListOf()
             )
 
             if(infChPost.tim?.isNotEmpty() == true) {
@@ -158,8 +156,7 @@ class PostEvent(
                     link,
                     fourPlebsPost.thread_num,
                     mutableListOf(),
-                    mutableListOf(),
-                    makeReferenceID(link)
+                    mutableListOf()
             )
 
             if(fourPlebsPost.media != null) {
@@ -197,8 +194,7 @@ class PostEvent(
                     qCodeFagPost.link,
                     qCodeFagPost.threadId?:"",
                     mutableListOf(),
-                    mutableListOf(),
-                    makeReferenceID(qCodeFagPost.link)
+                    mutableListOf()
             )
 
             if(qCodeFagPost.images?.isNotEmpty() == true) {
@@ -234,11 +230,11 @@ class PostEvent(
         if(text.isNotEmpty()) {
             // Board refs
             Regex(""".*>>(\d+).*""").findAll(text).forEach {
-                refs.add(Pair(ReferenceCache.ReferenceType.BoardPost, it.groupValues[1]))
+                refs.add(Pair(ReferenceCache.ReferenceType.BoardPost, "Post-${source}-${board}-${it.groupValues[1]}"))
             }
             // Site refs
-            Regex(""".*>>>/?(\w+/\d+).*""").findAll(text).forEach {
-                refs.add(Pair(ReferenceCache.ReferenceType.SitePost, it.groupValues[1]))
+            Regex(""".*>>>/?(\w+)/(\d+).*""").findAll(text).forEach {
+                refs.add(Pair(ReferenceCache.ReferenceType.SitePost, "Post-${source}-${it.groupValues[1]}-${it.groupValues[2]}"))
             }
         }
 

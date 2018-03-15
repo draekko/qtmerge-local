@@ -11,12 +11,11 @@ fun main(args: Array<String>) {
 
 class QTMonitor {
     fun Monitor() {
-        val countFile = File(System.getProperty("user.dir") + File.separator + ".qtmerge.cnt")
-        val qtmerge = QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge")
 
         while(true) {
             val startTime = ZonedDateTime.now(ZONEID).minusHours(48)
             println("Mirroring forward from ${startTime.format(FORMATTER)}")
+            val qtmerge = QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge")
             val mirrors = arrayListOf(
                     TwitterArchiveMirror("realDonaldTrump", startTime),
                     QCodeFagMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
@@ -43,14 +42,18 @@ class QTMonitor {
                     TheStoryOfQMirror("pol", Mirror.Source.InfChan, "polTrip8chanPosts"),
                     TheStoryOfQMirror("pol", Mirror.Source.FourChan, "pol4chanPosts"),
                     InfChMirror("greatawakening", startTime),
-                    InfChMirror("qresearch", startTime)
+                    InfChMirror("qresearch", startTime),
+                    InfChMirror("comms", startTime)
             )
 
             // Load previous count
             var count = 0
             println("\nLoading Previous QT Event Count")
-            if(countFile.exists()) {
-                count = countFile.readText().toInt()
+            val countFile = File(System.getProperty("user.dir") + File.separator + ".qtmerge.cnt")
+            run {
+                if (countFile.exists()) {
+                    count = countFile.readText().toInt()
+                }
             }
             println(">> $count events")
 
@@ -91,7 +94,9 @@ class QTMonitor {
                     .start()
                     .waitFor(15, TimeUnit.MINUTES)
 
-                countFile.writeText(postcount.toString())
+                run {
+                    countFile.writeText(postcount.toString())
+                }
             } else {
                 println("\nEvent count unchanged.")
             }

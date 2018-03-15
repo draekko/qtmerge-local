@@ -420,7 +420,13 @@ class FourPlebsMirror(
             // Check post files and references
             if(threadFile.exists()) {
                 val listType = object : TypeToken<Map<String, FourPlebsThread>>() {}.type
-                val threadMap : Map<String, FourPlebsThread> = Gson().fromJson(threadFile.readText(), listType)
+                val threadMap : Map<String, FourPlebsThread>
+                try {
+                    threadMap = Gson().fromJson(threadFile.readText(), listType)
+                } catch(e :Exception) {
+                    println("Unable to parse JSON in $threadFile: $e")
+                    return@forEach
+                }
 
                 // Check thread files and references
                 if(threadMap[thread]!!.op != null) {

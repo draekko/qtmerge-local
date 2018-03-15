@@ -5,7 +5,9 @@ import controllers.mirror.*
 import models.events.Event
 import models.events.Event.Companion.MergeEvent
 import models.events.PostEvent
+import models.mirror.ReferenceCache
 import models.q.Abbreviations
+import settings.Settings
 import settings.Settings.Companion.FORMATTER
 import settings.Settings.Companion.STARTTIME
 import settings.Settings.Companion.VERSION
@@ -28,6 +30,7 @@ class QTMerge(
 ) {
     var events : MutableList<Event> = arrayListOf()
     var threads : MutableList<Event> = arrayListOf()
+    var refs : ReferenceCache = ReferenceCache()
 
     companion object {
         val ROLLBACKDAYS = 111L
@@ -49,6 +52,7 @@ class QTMerge(
             Mirror.MirrorConfig(InfChMirror("thestorm", STARTTIME, ZonedDateTime.of(2018, 1, 15, 0, 0, 0, 0, ZONEID)), true),
             Mirror.MirrorConfig(InfChMirror("greatawakening", STARTTIME), true),
             Mirror.MirrorConfig(InfChMirror("qresearch", STARTTIME), true),
+            Mirror.MirrorConfig(InfChMirror("comms", STARTTIME), true),
 
             // QCodeFag
             Mirror.MirrorConfig(QCodeFagMirror("pol", Mirror.Source.FourChan, "pol4chanPosts", STARTTIME), false),
@@ -89,6 +93,12 @@ class QTMerge(
             events.forEachIndexed { index, event ->
                 event.UID = index.toString()
             }
+        }
+    }
+
+    fun LoadReferenceCache() {
+        File(Settings.CACHEDIR + File.separator + "refcache-min.json").bufferedReader().use {
+            refs = Gson().fromJson(it, ReferenceCache::class.java)
         }
     }
 
@@ -141,24 +151,25 @@ class QTMerge(
         )))
     }
 
-    fun MakeHeader(title : String = "", bodyStyle : String = "") : String = """
+    fun MakeHeader(prefix: String = "..", title : String = "", bodyStyle : String = "", includeViz : Boolean = false) : String = """
         |<!doctype html>
         |<html lang="en">
         |   <head>
         |       <meta charset="utf-8">
         |       <title>qtmerge v$VERSION${if(title.isNotEmpty()) " $title" else ""}</title>
-        |       <link rel="stylesheet" type="text/css" href="../styles/reset.css">
-        |       <link rel="stylesheet" type="text/css" href="../styles/screen.css" media="screen">
-        |       <link rel="stylesheet" type="text/css" href="../styles/print.css" media="print">
-        |       <link rel="stylesheet" type="text/css" href="qtmerge.css">
-        |       <link rel="stylesheet" type="text/css" href="../libs/jquery-ui-1.12.1/jquery-ui.min.css">
-        |       <script type="text/javascript" src="../scripts/jquery-3.3.1.min.js"></script>
-        |       <script type="text/javascript" src="../libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-        |       <script type="text/javascript" src="../scripts/jquery.jeditable.mini.js"></script>
-        |       <script type="text/javascript" src="../scripts/jquery.highlight-5.js"></script>
-        |       <script type="text/javascript" src="../scripts/underscore-min.js"></script>
-        |       <script type="text/javascript" src="../scripts/moment.min.js"></script>
-        |       <script type="text/javascript" src="../scripts/moment-timezone-with-data-2012-2022.js"></script>
+        |       <link rel="stylesheet" type="text/css" href="$prefix/styles/reset.css">
+        |       <link rel="stylesheet" type="text/css" href="$prefix/styles/screen.css" media="screen">
+        |       <link rel="stylesheet" type="text/css" href="$prefix/styles/print.css" media="print">
+        |       <link rel="stylesheet" type="text/css" href="$prefix/qtmerge/qtmerge.css">
+        |       <link rel="stylesheet" type="text/css" href="$prefix/libs/jquery-ui-1.12.1/jquery-ui.min.css">
+        |       <script type="text/javascript" src="$prefix/scripts/jquery-3.3.1.min.js"></script>
+        |       <script type="text/javascript" src="$prefix/libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+        |       <script type="text/javascript" src="$prefix/scripts/jquery.jeditable.mini.js"></script>
+        |       <script type="text/javascript" src="$prefix/scripts/jquery.highlight-5.js"></script>
+        |       <script type="text/javascript" src="$prefix/scripts/underscore-min.js"></script>
+        |       <script type="text/javascript" src="$prefix/scripts/moment.min.js"></script>
+        |       <script type="text/javascript" src="$prefix/scripts/moment-timezone-with-data-2012-2022.js"></script>
+        |       ${if(includeViz) """<script type="text/javascript" src="$prefix/scripts/svg-pan-zoom-3.5.2.min.js"></script><script type="text/javascript" src="$prefix/scripts/viz-1.8.1.js"></script>""" else ""}
         |       <!--
         |         -- qtmerge v$VERSION
         |         -- https://anonsw.github.com/qtmerge/
@@ -170,6 +181,7 @@ class QTMerge(
 
     fun ExportHtml() {
         LoadEvents()
+        LoadReferenceCache()
         LoadCatalog()
         File(outputDirectory).mkdirs()
 
@@ -187,7 +199,7 @@ class QTMerge(
             |   <td style="text-align:left;">${graphic.notes}</td>
             |</tr>
             """.trimMargin() }.joinToString("")
-        dsout.append(MakeHeader("Datasets", "margin-top:0;"))
+        dsout.append(MakeHeader("..", "Datasets", "margin-top:0;"))
         dsout.append("""
             |   <a href="./">&Lt; qtmerge</a>
             |   <h2>Raw Sources</h2>
@@ -263,7 +275,7 @@ class QTMerge(
             |       </div>
             |       <div class="menu">
             |          <form>
-            |              Post Time Offset (days): <input id="postedOffset" type="text" value="111" disabled="disabled">
+            |              Post Time Offset (days): <input id="postedOffset" type="text" value="111" disabled="disabled"><!-- TODO: slider instead? -->
             |              <input type="button" value="Print..." onclick="window.print();">
             |              <input id="openScratchPadButton" type="button" value="Open Scratch Pad" disabled="disabled"> <small>(Click posts to add/remove)</small>
             |          </form>
@@ -341,7 +353,7 @@ class QTMerge(
 
         if(threads.size > 0) {
             val qcat = File("$outputDirectory/catalog.html").outputStream().bufferedWriter()
-            qcat.append(MakeHeader("Thread Catalog", "margin-top: 0;"))
+            qcat.append(MakeHeader("..", "Thread Catalog", "margin-top: 0;"))
             qcat.append("<a href=\"./\">&Lt; qtmerge</a><br><p>This catalog is a work in progress.</p>")
 
             qcat.append("<table id=\"catalog\"><thead><tr><th>Date</th><th>Source</th><th>Board</th><th>Link</th><th>Subject</th></tr></thead><tbody>")
@@ -362,7 +374,7 @@ class QTMerge(
 
         // Abbreviations
         val aout = File("$outputDirectory/abbreviations.html").outputStream().bufferedWriter()
-        aout.append(MakeHeader("Abbreviations", "margin-top:0;"))
+        aout.append(MakeHeader("..", "Abbreviations", "margin-top:0;"))
         aout.append("""
             |   <a href="./">&Lt; qtmerge</a><br>
             |   <p>
@@ -380,9 +392,69 @@ class QTMerge(
         aout.append("</tbody></table></body></html>")
         aout.close()
 
+        // Maps
+        val event = events.first { it.Type() == "Post" }
+        File("$outputDirectory/maps/${event.Source()}/${event.Board()}").mkdirs()
+        val mout = File("$outputDirectory/maps/${event.Source()}/${event.Board()}/${event.ID()}.html").outputStream().bufferedWriter()
+        mout.append(MakeHeader("../../../..", event.ID(), "margin-top:0;", true))
+        mout.appendln("""
+            |<a href="../../../../">&Lt; qtmerge</a><br>
+            |<textarea id="map">
+            |digraph G {
+            """.trimMargin())
+
+        val nodeTip = PrepNodeTip(event.Text())
+        var nodeLabel = PrepNodeLabel(event.Text())
+        if(event.Text().length > 30) {
+            nodeLabel = "${PrepNodeLabel(event.Text().substring(0,30))}..."
+        }
+        mout.appendln("${event.ID()} [style=\"filled,bold\" fillcolor=lightyellow shape=Mrecord URL=\"${event.Link()}\" tooltip=<$nodeTip> label=<<table border=\"0\" cellborder=\"0\" cellpadding=\"0\"><tr><td bgcolor=\"#333333\"><font color=\"#cccccc\">${event.Trip()}</font></td></tr><tr><td balign=\"left\">$nodeLabel</td></tr></table>>]")
+
+        // How to quickly get references? Collect ref ids/threads into search params, pass to Search?
+
+        /*
+            refs.refs[event.ReferenceID()]?.references?.forEach {
+            }
+            */
+                /*
+            |digraph G {
+            |    subgraph cluster_0 {
+            |        style=filled;
+            |        color=lightgrey;
+            |        node [style=filled,color=white];
+            |        a0 -> a1 -> a2 -> a3;
+            |        label = "process #1";
+            |    }
+            |
+            |    subgraph cluster_1 {
+            |        node [style=filled];
+            |        b0 -> b1 -> b2 -> b3;
+            |        label = "process #2";
+            |        color=blue
+            |    }
+            |    start -> a0;
+            |    start -> b0;
+            |    a1 -> b3;
+            |    b2 -> a3;
+            |    a3 -> a0;
+            |    a3 -> end;
+            |    b3 -> end;
+            |
+            |    start [shape=Mdiamond];
+            |    end [shape=Msquare];
+            |}
+            */
+        mout.append("""
+            |}
+            |</textarea>
+            |<div id="output" style="position:fixed; top: 100px; left : 0; right : 0; bottom : 0;"></div>
+            |<script type="text/javascript" src="../../maps.js"></script></body></html>
+            """.trimMargin())
+        mout.close()
+
         // Notable posts
         val nout = File("$outputDirectory/notables.html").outputStream().bufferedWriter()
-        nout.append(MakeHeader("Notable Posts", "margin-top:0;"))
+        nout.append(MakeHeader("..", "Notable Posts", "margin-top:0;"))
         nout.append("""
             |   <a href="./">&Lt; qtmerge</a><br>
             |<table id="notablePosts">
@@ -392,6 +464,9 @@ class QTMerge(
             """.trimMargin())
         nout.close()
     }
+
+    fun PrepNodeTip(value : String) : String = escapeHTML(escapeHTML(value).replace("\n", "&#10;"))
+    fun PrepNodeLabel(value : String) : String = escapeHTML(escapeHTML(value)).replace("\n", "<br/>")
 
     fun MakeEventRow(event: Event, count : Int, emitOffset: Boolean = true) : String {
         val out = StringBuilder()
@@ -440,13 +515,26 @@ class QTMerge(
             images += "<br>"
         }
         var text = event.Text()
-        // TODO: fix cross bread references
         var refurl = event.Link().replaceAfter("#", "")
         if(!refurl.endsWith("#")) {
             refurl += "#"
         }
+        // TODO: move the replacement functionality into PostEvent
         text = text.replace(Regex(""">>(\d+)"""), { match ->
-            "<a href=\"$refurl${match.groups[1]!!.value}\">&gt;&gt;${match.groupValues[1]}</a>"
+            val ref = refs.refs[listOf("Post", event.Source(), event.Board(), match.groupValues[1]).joinToString("-")]
+            if(ref != null) {
+                "<a href=\"${ref.link}\">&gt;&gt;${match.groupValues[1]}</a>"
+            } else {
+                "<span class=\"missing\" title=\"Missing Data\">&gt;&gt;${match.groupValues[1]}</span>"
+            }
+        })
+        text = text.replace(Regex(""">>>(/?(\w+)/(\d+))"""), { match ->
+            val ref = refs.refs[listOf("Post", event.Source(), match.groupValues[2], match.groupValues[3]).joinToString("-")]
+            if(ref != null) {
+                "<a href=\"${ref.link}\">&gt;&gt;&gt;${match.groupValues[1]}</a>"
+            } else {
+                "<span class=\"missing\" title=\"Missing Data\">&gt;&gt;&gt;${match.groupValues[1]}</span>"
+            }
         })
         val boxRegex = Regex("""\[([^\]]+)\]""")
         text = text.replace(boxRegex, { matchResult ->

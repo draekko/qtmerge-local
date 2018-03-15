@@ -18,10 +18,12 @@ data class ReferenceCache(
     }
 
     data class Reference(
-        val id : String,
+        val refid : String,
+        val link : String,
         val type : String,
         val source : Mirror.Source,
         val board : String,
+        val id : String,
         val references : MutableList<String?> = mutableListOf()
     )
 }
