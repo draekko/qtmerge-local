@@ -183,7 +183,7 @@ class Abbreviations {
 			Pair("RNC", "Republican National Committee"),
 			Pair("ROTH", "Rothschild"),
 			Pair("RR", "Rod Rosenstein (Deputy Attorney General) or Ronald Reagan"),
-			Pair("RT", "Real time"),
+			Pair("RT", "Real time or Rex Tillerson (Former United States Secretary of State)"),
 			Pair("RYAN", "Paul Ryan, Speaker of the House"),
 			Pair("R's", "Republicans"),
 			Pair("SAP", "Special Access Programs"),
