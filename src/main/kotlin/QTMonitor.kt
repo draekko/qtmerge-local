@@ -15,7 +15,7 @@ class QTMonitor {
         while(true) {
             val startTime = ZonedDateTime.now(ZONEID).minusHours(48)
             println("Mirroring forward from ${startTime.format(FORMATTER)}")
-            val qtmerge = QTMerge(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod" + File.separator + "qtmerge")
+            val qtmerge = QTMerge(System.getProperty("user.dir") + File.separator + "draekko.github.io-prod" + File.separator + "qtmerge")
             val mirrors = arrayListOf(
                     TwitterArchiveMirror("realDonaldTrump", startTime),
                     QCodeFagMirror("greatawakening", Mirror.Source.InfChan, "greatawakeningTrip8chanPosts"),
@@ -79,7 +79,7 @@ class QTMonitor {
             if(count != postcount) {
                 println("\nEvent counts differ, merging")
                 ProcessBuilder(listOf("git", "pull"))
-                        .directory(File(System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod/qtmerge/"))
+                        .directory(File(System.getProperty("user.dir") + File.separator + "draekko.github.io-prod/qtmerge/"))
                         .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                         .redirectError(ProcessBuilder.Redirect.INHERIT)
                         .start()
@@ -87,7 +87,7 @@ class QTMonitor {
                 qtmerge.ExportHtml()
                 qtmerge.ExportJson()
                 println("\nDeploying")
-                ProcessBuilder(listOf("./deploy.sh", System.getProperty("user.dir") + File.separator + "anonsw.github.io-prod/qtmerge/"))
+                ProcessBuilder(listOf("./deploy.sh", System.getProperty("user.dir") + File.separator + "draekko.github.io-prod/qtmerge/"))
                     .directory(File(System.getProperty("user.dir")))
                     .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                     .redirectError(ProcessBuilder.Redirect.INHERIT)

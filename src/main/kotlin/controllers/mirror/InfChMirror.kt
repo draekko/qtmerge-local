@@ -26,7 +26,7 @@ class InfChMirror(
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(board, Source.InfChan, "anonsw") {
+) : Mirror(board, Source.InfChan, "draekko") {
 
     var threads : MutableList<InfChThread> = arrayListOf()
     val updatedThreads : MutableList<InfChThread> = arrayListOf()
@@ -324,7 +324,7 @@ class InfChMirror(
                                 val postset = Gson().fromJson(it.readText(), InfChPostSet::class.java)
 
                                 postset.posts.forEach { post ->
-                                    val postEvent = PostEvent.fromInfChPost("anonsw", source, board, it.absolutePath, post)
+                                    val postEvent = PostEvent.fromInfChPost("draekko", source, board, it.absolutePath, post)
                                     if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
                                         if(postCache.find { it.no == post.no } == null) {
                                             postCache.add(post)
@@ -348,7 +348,7 @@ class InfChMirror(
                         postset.posts.forEach { post ->
                             if (Instant.ofEpochSecond(post.time).isAfter(startTime.toInstant()) &&
                                     Instant.ofEpochSecond(post.time).isBefore(stopTime.toInstant())) {
-                                val postEvent = PostEvent.fromInfChPost("anonsw", source, board, cacheFile.absolutePath, post)
+                                val postEvent = PostEvent.fromInfChPost("draekko", source, board, cacheFile.absolutePath, post)
                                 eventList[postEvent.ID()] = postEvent
                             }
                         }

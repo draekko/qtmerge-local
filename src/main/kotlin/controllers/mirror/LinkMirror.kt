@@ -5,7 +5,7 @@ import models.events.Event
 class LinkMirror(
         board : String,
         val link : String
-) : Mirror(board, Source.LinkedData, "anonsw") {
+) : Mirror(board, Source.LinkedData, "draekko") {
 
     override fun Mirror() {
         println(">> mirror: $this")

@@ -11,7 +11,7 @@ class TwitterMirror(
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(board, Source.Twitter, "anonsw") {
+) : Mirror(board, Source.Twitter, "draekko") {
     val baseURL = "https://twitter.com"
     val mirrorRoot = DATADIR + File.separator + dataset + File.separator + "twitter"
 

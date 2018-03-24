@@ -23,7 +23,7 @@ class FourPlebsMirror(
         board : String,
         val startTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZONEID),
         val stopTime : ZonedDateTime = ZonedDateTime.ofInstant(Instant.now(), ZONEID)
-) : Mirror(board, Source.FourChan, "anonsw") {
+) : Mirror(board, Source.FourChan, "draekko") {
     val mirrorLayout = MirrorLayout(DATADIR, dataset, "4plebs.org", board)
     val cacheLayout = MirrorLayout(CACHEDIR, dataset, "4plebs.org", board)
     var threads : MutableList<String> = arrayListOf()
@@ -530,7 +530,7 @@ class FourPlebsMirror(
                                 // Search OP if it is set (should always be in mirror data, but checking just in case)
                                 if(threadMap[thread]!!.op != null) {
                                     val threadOp = threadMap[thread]!!.op!!
-                                    val threadPostEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, threadOp)
+                                    val threadPostEvent = PostEvent.fromFourChanPost("draekko", source, board, threadFile.absolutePath, threadOp)
                                     if (params.condition.Search(EXCEPTIONS[board]!!, threadPostEvent)) {
                                         if(!postCache.containsKey(threadOp.num)) {
                                             postCache[threadOp.num] = threadOp
@@ -548,7 +548,7 @@ class FourPlebsMirror(
                                 if (threadMap[thread]!!.posts != null) {
                                     threadMap[thread]!!.posts!!.keys.forEach {
                                         val post = threadMap[thread]!!.posts!![it]!!
-                                        val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, threadFile.absolutePath, post)
+                                        val postEvent = PostEvent.fromFourChanPost("draekko", source, board, threadFile.absolutePath, post)
                                         if (params.condition.Search(EXCEPTIONS[board]!!, postEvent)) {
                                             if(!postCache.containsKey(post.num)) {
                                                 postCache[post.num] = post
@@ -575,7 +575,7 @@ class FourPlebsMirror(
                                 val post = threadMap[thread]!!.posts!![it]!!
                                 if (Instant.ofEpochSecond(post.timestamp).isAfter(startTime.toInstant()) &&
                                         Instant.ofEpochSecond(post.timestamp).isBefore(stopTime.toInstant())) {
-                                    val postEvent = PostEvent.fromFourChanPost("anonsw", source, board, cacheFile.absolutePath, post)
+                                    val postEvent = PostEvent.fromFourChanPost("draekko", source, board, cacheFile.absolutePath, post)
                                     eventList[postEvent.ID()] = postEvent
                                 }
                             }
